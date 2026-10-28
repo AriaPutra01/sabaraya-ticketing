@@ -1,0 +1,144 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  EMPLOYEE
+}
+
+enum Division {
+  IT
+  TEKNISI
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+model User {
+  id               String             @id @default(uuid())
+  name             String
+  email            String             @unique
+  passwordHash     String
+  role             Role               @default(EMPLOYEE)
+  division         Division?
+  phone            String?
+  isActive         Boolean            @default(true)
+  maxActiveTickets Int                @default(5)
+  schedules        EmployeeSchedule[]
+  assignedTickets  Ticket[]           @relation("AssigneeTickets")
+  activities       TicketActivity[]
+  sessions         Session[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+model Region {
+  id        String             @id @default(uuid())
+  name      String             @unique
+  coverage  String             // Deskripsi rinci cakupan area (kota/kabupaten yang dicakup)
+  isActive  Boolean            @default(true)
+  schedules EmployeeSchedule[]
+  tickets   Ticket[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@map("regions")
+}
+
+model EmployeeSchedule {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([regionId, startTime, endTime])
+  @@map("employee_schedules")
+}
+
+model Ticket {
+  id              String           @id @default(uuid())
+  code            String           @unique
+  division        Division
+  regionId        String
+  region          Region           @relation(fields: [regionId], references: [id])
+  institutionName String
+  reporterName    String
+  reporterPhone   String
+  reporterAddress String?
+  deviceBrand     String?
+  serialNumber    String?
+  title           String
+  description     String
+  photoUrl        String?
+  priority        TicketPriority   @default(MEDIUM)
+  status          TicketStatus     @default(PENDING)
+  assigneeId      String?
+  assignee        User?            @relation("AssigneeTickets", fields: [assigneeId], references: [id])
+  assignedAt      DateTime?
+  respondedAt     DateTime?
+  resolvedAt      DateTime?
+  rejectionReason String?
+  resolutionNote  String?
+  activities      TicketActivity[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([status, division, regionId])
+  @@map("tickets")
+}
+
+model TicketActivity {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  actorName String
+  action    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("ticket_activities")
+}

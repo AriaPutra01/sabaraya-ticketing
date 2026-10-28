@@ -1,0 +1,175 @@
+import { NextRequest, NextResponse, connection } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { assignTicketRoundRobin } from "@/lib/round-robin";
+import { getSession } from "@/lib/auth";
+import { Division, TicketPriority, TicketStatus } from "@prisma/client";
+import { z } from "zod";
+
+const createTicketSchema = z.object({
+  division: z.enum(["IT", "TEKNISI"]),
+  regionId: z.string().min(1, "Daerah wajib dipilih"),
+  institutionName: z.string().min(2, "Nama instansi minimal 2 karakter"),
+  reporterName: z.string().min(2, "Nama pelapor minimal 2 karakter"),
+  reporterPhone: z.string().min(8, "Nomor telepon/WA minimal 8 digit"),
+  reporterAddress: z.string().optional(),
+  deviceBrand: z.string().optional(),
+  serialNumber: z.string().optional(),
+  title: z.string().min(3, "Judul keluhan minimal 3 karakter"),
+  description: z.string().min(5, "Deskripsi keluhan minimal 5 karakter"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  photoUrl: z.string().optional(),
+});
+
+export async function POST(req: NextRequest) {
+  await connection();
+  try {
+    const body = await req.json();
+    const validated = createTicketSchema.parse(body);
+
+    // Format kode tiket unik: SBY-YYMM-RANDOM
+    const datePrefix = new Date().toISOString().slice(2, 7).replace("-", ""); // YYMM
+    const randomHex = Math.floor(1000 + Math.random() * 9000);
+    const code = `SBY-${datePrefix}-${randomHex}`;
+
+    // Buat Tiket di database
+    const ticket = await prisma.ticket.create({
+      data: {
+        code,
+        division: validated.division as Division,
+        regionId: validated.regionId,
+        institutionName: validated.institutionName,
+        reporterName: validated.reporterName,
+        reporterPhone: validated.reporterPhone,
+        reporterAddress: validated.reporterAddress,
+        deviceBrand: validated.deviceBrand,
+        serialNumber: validated.serialNumber,
+        title: validated.title,
+        description: validated.description,
+        priority: validated.priority as TicketPriority,
+        photoUrl: validated.photoUrl,
+        status: TicketStatus.PENDING,
+      },
+    });
+
+    // Catat log tiket dibuat
+    await prisma.ticketActivity.create({
+      data: {
+        ticketId: ticket.id,
+        actorName: validated.reporterName,
+        action: "CREATED",
+        note: `Tiket diajukan oleh ${validated.reporterName} (${validated.institutionName})`,
+      },
+    });
+
+    // Jalankan Round-Robin Otomatis
+    const assignResult = await assignTicketRoundRobin(
+      ticket.id,
+      ticket.division,
+      ticket.regionId
+    );
+
+    // Update cookie sbr_tickets untuk tracking otomatis pengadu
+    const existingCookie = req.cookies.get("sbr_tickets")?.value;
+    let ticketCodes: string[] = [];
+    if (existingCookie) {
+      try {
+        ticketCodes = JSON.parse(existingCookie);
+        if (!Array.isArray(ticketCodes)) ticketCodes = [];
+      } catch {
+        ticketCodes = [];
+      }
+    }
+    if (!ticketCodes.includes(code)) {
+      ticketCodes.unshift(code);
+      if (ticketCodes.length > 20) ticketCodes = ticketCodes.slice(0, 20); // Simpan maks 20 tiket terakhir
+    }
+
+    const res = NextResponse.json({
+      success: true,
+      message: "Tiket berhasil dibuat.",
+      data: {
+        code: ticket.code,
+        assigned: assignResult.assigned,
+        assigneeName: assignResult.assignee?.name || null,
+      },
+    });
+
+    res.cookies.set("sbr_tickets", JSON.stringify(ticketCodes), {
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60, // 30 hari
+      sameSite: "lax",
+    });
+
+    return res;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, message: error.issues[0]?.message || "Input tidak valid" },
+        { status: 400 }
+      );
+    }
+    console.error("Failed to create ticket:", error);
+    return NextResponse.json(
+      { success: false, message: "Terjadi kesalahan server saat membuat tiket." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  await connection();
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+  const division = searchParams.get("division");
+  const regionId = searchParams.get("regionId");
+  const search = searchParams.get("search");
+
+  const where: any = {};
+
+  if (session.role === "EMPLOYEE") {
+    // Karyawan hanya melihat tiket yang di-assign padanya
+    where.assigneeId = session.userId;
+  }
+
+  if (status && status !== "ALL") {
+    where.status = status as TicketStatus;
+  }
+  if (division && division !== "ALL") {
+    where.division = division as Division;
+  }
+  if (regionId && regionId !== "ALL") {
+    where.regionId = regionId;
+  }
+  if (search) {
+    where.OR = [
+      { code: { contains: search, mode: "insensitive" } },
+      { title: { contains: search, mode: "insensitive" } },
+      { institutionName: { contains: search, mode: "insensitive" } },
+      { reporterName: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  try {
+    const tickets = await prisma.ticket.findMany({
+      where,
+      include: {
+        region: { select: { name: true, coverage: true } },
+        assignee: { select: { id: true, name: true, phone: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ success: true, data: tickets });
+  } catch (error) {
+    console.error("Failed to fetch tickets:", error);
+    return NextResponse.json(
+      { success: false, message: "Gagal mengambil daftar tiket." },
+      { status: 500 }
+    );
+  }
+}
