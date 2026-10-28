@@ -24,25 +24,26 @@ export async function POST(
       return NextResponse.json({ success: false, message: "Akses ditolak." }, { status: 403 });
     }
 
-    await prisma.ticket.update({
-      where: { id },
-      data: {
-        status: TicketStatus.IN_PROGRESS,
-        respondedAt: ticket.respondedAt || new Date(),
-      },
-    });
+    await prisma.$transaction([
+      prisma.ticket.update({
+        where: { id },
+        data: {
+          status: TicketStatus.IN_PROGRESS,
+          respondedAt: ticket.respondedAt || new Date(),
+        },
+      }),
+      prisma.ticketActivity.create({
+        data: {
+          ticketId: id,
+          actorId: session.userId,
+          actorName: session.name,
+          action: "IN_PROGRESS",
+          note: `Tugas diterima dan disetujui oleh ${session.name} (Memulai Penanganan)`,
+        },
+      }),
+    ]);
 
-    await prisma.ticketActivity.create({
-      data: {
-        ticketId: id,
-        actorId: session.userId,
-        actorName: session.name,
-        action: "IN_PROGRESS",
-        note: `Pengerjaan tiket dimulai oleh ${session.name}`,
-      },
-    });
-
-    return NextResponse.json({ success: true, message: "Tiket dalam proses pengerjaan." });
+    return NextResponse.json({ success: true, message: "Tugas berhasil disetujui & mulai dikerjakan." });
   } catch (error) {
     console.error("Failed to progress ticket:", error);
     return NextResponse.json({ success: false, message: "Gagal memperbarui status tiket." }, { status: 500 });

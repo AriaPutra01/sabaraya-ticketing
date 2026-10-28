@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse, connection } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { assignTicketRoundRobin } from "@/lib/round-robin";
 import { getSession } from "@/lib/auth";
 import { Division, TicketPriority, TicketStatus } from "@prisma/client";
 import { z } from "zod";
@@ -18,6 +17,7 @@ const createTicketSchema = z.object({
   description: z.string().min(5, "Deskripsi keluhan minimal 5 karakter"),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
   photoUrl: z.string().optional(),
+  photoUrls: z.array(z.string()).max(3, "Maksimal 3 foto").optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,47 +26,46 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = createTicketSchema.parse(body);
 
-    // Format kode tiket unik: SBY-YYMM-RANDOM
+    const photos = validated.photoUrls || (validated.photoUrl ? [validated.photoUrl] : []);
+
+    // Format kode tiket unik: SBY-YYMM-6DIGIT (1 juta kombinasi per bulan)
     const datePrefix = new Date().toISOString().slice(2, 7).replace("-", ""); // YYMM
-    const randomHex = Math.floor(1000 + Math.random() * 9000);
-    const code = `SBY-${datePrefix}-${randomHex}`;
+    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+    const code = `SBY-${datePrefix}-${randomSuffix}`;
 
-    // Buat Tiket di database
-    const ticket = await prisma.ticket.create({
-      data: {
-        code,
-        division: validated.division as Division,
-        regionId: validated.regionId,
-        institutionName: validated.institutionName,
-        reporterName: validated.reporterName,
-        reporterPhone: validated.reporterPhone,
-        reporterAddress: validated.reporterAddress,
-        deviceBrand: validated.deviceBrand,
-        serialNumber: validated.serialNumber,
-        title: validated.title,
-        description: validated.description,
-        priority: validated.priority as TicketPriority,
-        photoUrl: validated.photoUrl,
-        status: TicketStatus.PENDING,
-      },
+    // Buat Tiket dan Aktivitas di database dalam transaksi atomik
+    const ticket = await prisma.$transaction(async (tx) => {
+      const createdTicket = await tx.ticket.create({
+        data: {
+          code,
+          division: validated.division as Division,
+          regionId: validated.regionId,
+          institutionName: validated.institutionName,
+          reporterName: validated.reporterName,
+          reporterPhone: validated.reporterPhone,
+          reporterAddress: validated.reporterAddress,
+          deviceBrand: validated.deviceBrand,
+          serialNumber: validated.serialNumber,
+          title: validated.title,
+          description: validated.description,
+          priority: validated.priority as TicketPriority,
+          photoUrl: photos[0] || null,
+          photoUrls: photos,
+          status: TicketStatus.PENDING,
+        },
+      });
+
+      await tx.ticketActivity.create({
+        data: {
+          ticketId: createdTicket.id,
+          actorName: validated.reporterName,
+          action: "CREATED",
+          note: `Tiket diajukan oleh ${validated.reporterName} (${validated.institutionName}) - Menunggu penugasan tim operasional`,
+        },
+      });
+
+      return createdTicket;
     });
-
-    // Catat log tiket dibuat
-    await prisma.ticketActivity.create({
-      data: {
-        ticketId: ticket.id,
-        actorName: validated.reporterName,
-        action: "CREATED",
-        note: `Tiket diajukan oleh ${validated.reporterName} (${validated.institutionName})`,
-      },
-    });
-
-    // Jalankan Round-Robin Otomatis
-    const assignResult = await assignTicketRoundRobin(
-      ticket.id,
-      ticket.division,
-      ticket.regionId
-    );
 
     // Update cookie sbr_tickets untuk tracking otomatis pengadu
     const existingCookie = req.cookies.get("sbr_tickets")?.value;
@@ -86,11 +85,10 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({
       success: true,
-      message: "Tiket berhasil dibuat.",
+      message: "Pengaduan berhasil didaftarkan. Menunggu penugasan petugas operasional.",
       data: {
         code: ticket.code,
-        assigned: assignResult.assigned,
-        assigneeName: assignResult.assignee?.name || null,
+        status: ticket.status,
       },
     });
 

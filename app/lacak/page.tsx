@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Clock, CheckCircle, AlertTriangle, User, MapPin, Building, Wrench, Shield, ArrowRight } from "lucide-react";
+import { Search, Clock, Building, Shield, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -163,6 +163,26 @@ function TrackContent() {
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-1">
               <p className="font-bold text-sm text-emerald-900">Catatan Penyelesaian Masalah:</p>
               <p className="leading-relaxed">{activeTicket.resolutionNote}</p>
+            </div>
+          )}
+
+          {/* Lampiran Foto Kendala */}
+          {(activeTicket.photoUrls?.length > 0 || activeTicket.photoUrl) && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-700">Lampiran Foto Bukti Kendala:</p>
+              <div className="grid grid-cols-3 gap-3">
+                {(activeTicket.photoUrls?.length > 0 ? activeTicket.photoUrls : [activeTicket.photoUrl]).map((url: string, idx: number) => (
+                  <a
+                    key={idx}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-blue-600 transition bg-slate-100"
+                  >
+                    <img src={url} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 

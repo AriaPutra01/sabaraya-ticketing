@@ -86,8 +86,7 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload | n
 
 export async function verifyRefreshToken(token: string): Promise<{ userId: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, REFRESH_SECRET);
-    const { userId } = payload as { userId: string };
+    await jwtVerify(token, REFRESH_SECRET);
 
     // Cek di database PostgreSQL
     if (!prisma?.session) return null;
@@ -151,21 +150,25 @@ export async function getSession(): Promise<TokenPayload | null> {
     name: user.name,
   });
 
-  cookieStore.set("sbr_access_token", newTokens.accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 15 * 60,
-  });
+  try {
+    cookieStore.set("sbr_access_token", newTokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60,
+    });
 
-  cookieStore.set("sbr_refresh_token", newTokens.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60,
-  });
+    cookieStore.set("sbr_refresh_token", newTokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+  } catch {
+    // Abaikan jika dipanggil dari konteks read-only (misal Server Component)
+  }
 
   return {
     userId: user.id,

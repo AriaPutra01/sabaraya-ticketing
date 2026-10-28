@@ -32,24 +32,25 @@ export async function POST(
       return NextResponse.json({ success: false, message: "Akses ditolak." }, { status: 403 });
     }
 
-    await prisma.ticket.update({
-      where: { id },
-      data: {
-        status: TicketStatus.RESOLVED,
-        resolvedAt: new Date(),
-        resolutionNote: validated.resolutionNote,
-      },
-    });
-
-    await prisma.ticketActivity.create({
-      data: {
-        ticketId: id,
-        actorId: session.userId,
-        actorName: session.name,
-        action: "RESOLVED",
-        note: `Tiket diselesaikan oleh ${session.name}. Hasil: ${validated.resolutionNote}`,
-      },
-    });
+    await prisma.$transaction([
+      prisma.ticket.update({
+        where: { id },
+        data: {
+          status: TicketStatus.RESOLVED,
+          resolvedAt: new Date(),
+          resolutionNote: validated.resolutionNote,
+        },
+      }),
+      prisma.ticketActivity.create({
+        data: {
+          ticketId: id,
+          actorId: session.userId,
+          actorName: session.name,
+          action: "RESOLVED",
+          note: `Tiket diselesaikan oleh ${session.name}. Hasil: ${validated.resolutionNote}`,
+        },
+      }),
+    ]);
 
     return NextResponse.json({ success: true, message: "Tiket berhasil diselesaikan." });
   } catch (error) {

@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Shield, User, LogOut, Ticket, Calendar, MapPin, Users,
-  CheckCircle, Play, XCircle, Plus, RefreshCw, AlertCircle, Clock,
-  Eye, Search, Filter, Edit3, KeyRound, Building, Phone, Image as ImageIcon, Trash2
+  User, LogOut, Ticket, Calendar, MapPin, Users,
+  CheckCircle, XCircle, Plus, RefreshCw, AlertCircle, Clock,
+  Eye, Search, Edit3, Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -49,6 +49,7 @@ export default function DashboardPage() {
     ticketId: "",
     assigneeId: "",
   });
+  const [runningAutoAssign, setRunningAutoAssign] = useState(false);
   const [scheduleModal, setScheduleModal] = useState({
     open: false,
     userId: "",
@@ -113,6 +114,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return;
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeTab, statusFilter, divisionFilter, searchQuery]);
 
   const loadData = () => {
@@ -273,6 +275,25 @@ export default function DashboardPage() {
       }
     } catch {
       toast.error("Gagal menutup tiket.");
+    }
+  };
+
+  const handleTriggerAutoAssign = async () => {
+    setRunningAutoAssign(true);
+    const toastId = toast.loading("Memeriksa tiket pending > 30 menit...");
+    try {
+      const res = await fetch("/api/admin/tickets/auto-assign?minutes=30", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message, { id: toastId });
+        loadData();
+      } else {
+        toast.error(data.message, { id: toastId });
+      }
+    } catch {
+      toast.error("Gagal menjalankan auto-assign.", { id: toastId });
+    } finally {
+      setRunningAutoAssign(false);
     }
   };
 
@@ -576,6 +597,18 @@ export default function DashboardPage() {
             <h2 className="text-sm font-bold text-slate-800">
               Daftar Tiket ({tickets.length} Tiket Ditemukan)
             </h2>
+
+            {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
+              <button
+                onClick={handleTriggerAutoAssign}
+                disabled={runningAutoAssign}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-50 shadow-sm"
+                title="Tugaskan otomatis tiket pending yang belum di-assign lebih dari 30 menit"
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                {runningAutoAssign ? "Memproses..." : "⚡ Jalankan Auto-Assign (>30 Mnt)"}
+              </button>
+            )}
           </div>
 
           {tickets.length === 0 ? (
@@ -646,33 +679,43 @@ export default function DashboardPage() {
                     {user.role === "EMPLOYEE" && t.assigneeId === user.id && (
                       <>
                         {t.status === "ASSIGNED" && (
-                          <button
-                            onClick={() => handleStartProgress(t.id)}
-                            className="px-3.5 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold flex items-center gap-1.5 transition"
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                            Mulai Kerjakan
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleStartProgress(t.id)}
+                              className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Terima Tugas (Setuju)
+                            </button>
+
+                            <button
+                              onClick={() => setRejectModal({ open: true, ticketId: t.id, reason: "" })}
+                              className="px-3.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition border border-rose-200"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              Tolak Tugas
+                            </button>
+                          </>
                         )}
 
                         {t.status === "IN_PROGRESS" && (
-                          <button
-                            onClick={() => setResolveModal({ open: true, ticketId: t.id, note: "" })}
-                            className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 transition"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Selesaikan Tiket
-                          </button>
-                        )}
+                          <>
+                            <button
+                              onClick={() => setResolveModal({ open: true, ticketId: t.id, note: "" })}
+                              className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Selesaikan Tiket
+                            </button>
 
-                        {["ASSIGNED", "IN_PROGRESS"].includes(t.status) && (
-                          <button
-                            onClick={() => setRejectModal({ open: true, ticketId: t.id, reason: "" })}
-                            className="px-3.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition border border-rose-200"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                            Tolak Tiket
-                          </button>
+                            <button
+                              onClick={() => setRejectModal({ open: true, ticketId: t.id, reason: "" })}
+                              className="px-3.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition border border-rose-200"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              Alihkan / Tolak Tiket
+                            </button>
+                          </>
                         )}
                       </>
                     )}
@@ -680,17 +723,32 @@ export default function DashboardPage() {
                     {/* Admin / Superadmin Actions */}
                     {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
                       <>
-                        <button
-                          onClick={() => {
-                            fetch("/api/admin/employees")
-                              .then((res) => res.json())
-                              .then((res) => res.success && setEmployees(res.data));
-                            setAssignModal({ open: true, ticketId: t.id, assigneeId: "" });
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition"
-                        >
-                          Tugaskan Manual
-                        </button>
+                        {t.status === "PENDING" ? (
+                          <button
+                            onClick={() => {
+                              fetch("/api/admin/employees")
+                                .then((res) => res.json())
+                                .then((res) => res.success && setEmployees(res.data));
+                              setAssignModal({ open: true, ticketId: t.id, assigneeId: "" });
+                            }}
+                            className="px-3.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                          >
+                            <User className="w-3.5 h-3.5" />
+                            Tugaskan Petugas
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              fetch("/api/admin/employees")
+                                .then((res) => res.json())
+                                .then((res) => res.success && setEmployees(res.data));
+                              setAssignModal({ open: true, ticketId: t.id, assigneeId: "" });
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                          >
+                            Ubah Petugas
+                          </button>
+                        )}
 
                         {t.status === "RESOLVED" && (
                           <button
@@ -948,14 +1006,22 @@ export default function DashboardPage() {
                 {detailModal.ticket.description}
               </div>
 
-              {detailModal.ticket.photoUrl && (
-                <div className="pt-2">
-                  <p className="text-xs font-bold text-slate-700 mb-2">Lampiran Bukti Foto:</p>
-                  <img
-                    src={detailModal.ticket.photoUrl}
-                    alt="Lampiran Kendala"
-                    className="max-h-64 rounded-xl border border-slate-200 object-contain bg-black/5"
-                  />
+              {(detailModal.ticket.photoUrls?.length > 0 || detailModal.ticket.photoUrl) && (
+                <div className="pt-2 space-y-1.5">
+                  <p className="text-xs font-bold text-slate-700">Lampiran Bukti Foto ({detailModal.ticket.photoUrls?.length || 1} Foto):</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(detailModal.ticket.photoUrls?.length > 0 ? detailModal.ticket.photoUrls : [detailModal.ticket.photoUrl]).map((url: string, idx: number) => (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-blue-600 transition bg-slate-100"
+                      >
+                        <img src={url} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -994,12 +1060,78 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                {/* Employee Actions inside Modal */}
+                {user.role === "EMPLOYEE" && detailModal.ticket.assigneeId === user.id && (
+                  <>
+                    {detailModal.ticket.status === "ASSIGNED" && (
+                      <>
+                        <button
+                          onClick={() => handleStartProgress(detailModal.ticket.id)}
+                          className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Terima Tugas (Setuju)
+                        </button>
+                        <button
+                          onClick={() => setRejectModal({ open: true, ticketId: detailModal.ticket.id, reason: "" })}
+                          className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition border border-rose-200"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          Tolak Tugas
+                        </button>
+                      </>
+                    )}
+
+                    {detailModal.ticket.status === "IN_PROGRESS" && (
+                      <button
+                        onClick={() => setResolveModal({ open: true, ticketId: detailModal.ticket.id, note: "" })}
+                        className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Selesaikan Tiket
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* Admin Actions inside Modal */}
+                {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
+                  <>
+                    {detailModal.ticket.status === "PENDING" && (
+                      <button
+                        onClick={() => {
+                          fetch("/api/admin/employees")
+                            .then((res) => res.json())
+                            .then((res) => res.success && setEmployees(res.data));
+                          setAssignModal({ open: true, ticketId: detailModal.ticket.id, assigneeId: "" });
+                        }}
+                        className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold transition flex items-center gap-1.5"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        Tugaskan Petugas
+                      </button>
+                    )}
+
+                    {detailModal.ticket.status === "RESOLVED" && (
+                      <button
+                        onClick={() => handleCloseTicket(detailModal.ticket.id)}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Tutup Tiket Resmi
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
               <button
                 onClick={() => setDetailModal({ open: false, ticket: null })}
-                className="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold"
+                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
               >
-                Tutup
+                Tutup Jendela
               </button>
             </div>
           </div>

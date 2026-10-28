@@ -15,20 +15,21 @@ export async function POST(
   const { id } = await params;
 
   try {
-    await prisma.ticket.update({
-      where: { id },
-      data: { status: TicketStatus.CLOSED },
-    });
-
-    await prisma.ticketActivity.create({
-      data: {
-        ticketId: id,
-        actorId: session.userId,
-        actorName: session.name,
-        action: "CLOSED",
-        note: `Tiket ditutup resmi oleh ${session.name}`,
-      },
-    });
+    await prisma.$transaction([
+      prisma.ticket.update({
+        where: { id },
+        data: { status: TicketStatus.CLOSED },
+      }),
+      prisma.ticketActivity.create({
+        data: {
+          ticketId: id,
+          actorId: session.userId,
+          actorName: session.name,
+          action: "CLOSED",
+          note: `Tiket ditutup resmi oleh ${session.name}`,
+        },
+      }),
+    ]);
 
     return NextResponse.json({ success: true, message: "Tiket telah ditutup." });
   } catch (error) {

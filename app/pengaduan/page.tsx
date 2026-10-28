@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Wrench, Monitor, MapPin, Building2, User, Phone, AlertCircle, CheckCircle2, Copy, Upload, Image as ImageIcon } from "lucide-react";
+import { Wrench, Monitor, MapPin, Building2, AlertCircle, CheckCircle2, Copy, X } from "lucide-react";
 
 interface RegionItem {
   id: string;
@@ -16,6 +16,7 @@ export default function PengaduanPage() {
   const [regions, setRegions] = useState<RegionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [successData, setSuccessData] = useState<{ code: string; assigned: boolean; assigneeName: string | null } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -30,7 +31,6 @@ export default function PengaduanPage() {
     title: "",
     description: "",
     priority: "MEDIUM",
-    photoUrl: "",
   });
 
   useEffect(() => {
@@ -46,35 +46,97 @@ export default function PengaduanPage() {
   }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran foto maksimal 5MB.");
+    // Validasi batas maksimal 3 foto
+    if (photoUrls.length + selectedFiles.length > 3) {
+      toast.error(`Maksimal 3 foto. Anda sudah mengunggah ${photoUrls.length} foto.`);
+      e.target.value = "";
       return;
     }
 
+    // Validasi ukuran & tipe file
+    for (const file of selectedFiles) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`Foto "${file.name}" melebihi batas 5MB.`);
+        e.target.value = "";
+        return;
+      }
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        toast.error(`Format berkas "${file.name}" tidak didukung. Gunakan JPG, PNG, atau WEBP.`);
+        e.target.value = "";
+        return;
+      }
+    }
+
     setUploading(true);
-    const body = new FormData();
-    body.append("file", file);
+    const toastId = toast.loading(`Menyiapkan unggah ${selectedFiles.length} foto ke Cloudflare R2...`);
 
     try {
-      const res = await fetch("/api/upload", {
+      // 1. Minta Presigned URL dari backend
+      const presignRes = await fetch("/api/upload/presign", {
         method: "POST",
-        body,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: selectedFiles.map((f) => ({
+            fileName: f.name,
+            fileType: f.type,
+            fileSize: f.size,
+          })),
+        }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setFormData((prev) => ({ ...prev, photoUrl: data.url }));
-        toast.success("Foto berhasil diunggah.");
+
+      const presignData = await presignRes.json();
+
+      if (presignRes.ok && presignData.success && presignData.items) {
+        // 2. Upload langsung (Direct PUT) ke Cloudflare R2 secara paralel
+        const uploadPromises = selectedFiles.map(async (file, i) => {
+          const item = presignData.items[i];
+          const uploadRes = await fetch(item.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error(`Gagal mengunggah foto "${file.name}" ke Cloudflare R2.`);
+          }
+          return item.publicUrl as string;
+        });
+
+        const uploadedUrls = await Promise.all(uploadPromises);
+
+        setPhotoUrls((prev) => [...prev, ...uploadedUrls]);
+        toast.success(`${uploadedUrls.length} foto berhasil diunggah ke R2 storage!`, { id: toastId });
       } else {
-        toast.error(data.message || "Gagal mengunggah foto.");
+        // Fallback jika kredensial R2 belum diisi (misal saat dev)
+        toast.info("Mengunggah foto mode lokal...", { id: toastId });
+        const fallbackUrls: string[] = [];
+        for (const file of selectedFiles) {
+          const body = new FormData();
+          body.append("file", file);
+          const res = await fetch("/api/upload", { method: "POST", body });
+          const data = await res.json();
+          if (data.success && data.url) {
+            fallbackUrls.push(data.url);
+          }
+        }
+        setPhotoUrls((prev) => [...prev, ...fallbackUrls]);
+        toast.success(`${fallbackUrls.length} foto berhasil dilampirkan.`, { id: toastId });
       }
-    } catch {
-      toast.error("Terjadi kesalahan saat unggah foto.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Gagal mengunggah foto.", { id: toastId });
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
+  };
+
+  const handleRemovePhoto = (indexToRemove: number) => {
+    setPhotoUrls((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    toast.info("Foto dihapus dari daftar lampiran.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,7 +147,11 @@ export default function PengaduanPage() {
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          photoUrls,
+          photoUrl: photoUrls[0] || null,
+        }),
       });
       const data = await res.json();
 
@@ -138,16 +204,10 @@ export default function PengaduanPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-left text-xs text-blue-900 space-y-1">
-            <p className="font-semibold">Status Penugasan Petugas:</p>
-            {successData.assigned ? (
-              <p className="text-emerald-700 font-medium">
-                ✓ Otomatis ditugaskan ke staf siaga: <b>{successData.assigneeName}</b>
-              </p>
-            ) : (
-              <p className="text-amber-700 font-medium">
-                ⏳ Menunggu verifikasi jadwal & penugasan staf siaga wilayah.
-              </p>
-            )}
+            <p className="font-semibold">Status Penugasan:</p>
+            <p className="text-amber-800 font-medium">
+              ⏳ Berhasil terdaftar (Menunggu Penugasan). Tim operasional sedang meninjau dan menugaskan staf siaga terdekat.
+            </p>
             <p className="text-slate-500 pt-1">
               Tiket ini juga telah disimpan otomatis di browser Anda pada menu Lacak Tiket.
             </p>
@@ -163,6 +223,7 @@ export default function PengaduanPage() {
             <button
               onClick={() => {
                 setSuccessData(null);
+                setPhotoUrls([]);
                 setFormData({
                   division: "TEKNISI",
                   regionId: regions[0]?.id || "",
@@ -175,7 +236,6 @@ export default function PengaduanPage() {
                   title: "",
                   description: "",
                   priority: "MEDIUM",
-                  photoUrl: "",
                 });
               }}
               className="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition"
@@ -242,7 +302,7 @@ export default function PengaduanPage() {
           </div>
         </div>
 
-        {/* 2. Pilih Daerah & Cakupan */}
+        {/* 2. Pilih Daerah */}
         <div>
           <label className="block text-sm font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-blue-600" />
@@ -401,7 +461,7 @@ export default function PengaduanPage() {
             />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 items-start">
+          <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Tingkat Urgensi
@@ -409,7 +469,7 @@ export default function PengaduanPage() {
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
               >
                 <option value="LOW">Rendah (Pertanyaan umum / konsultasi)</option>
                 <option value="MEDIUM">Sedang (Kendala minor / pekerjaan masih bisa jalan)</option>
@@ -418,22 +478,60 @@ export default function PengaduanPage() {
               </select>
             </div>
 
+            {/* Unggah Foto / Bukti Multiple (Maks 3) ke Cloudflare R2 */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Foto / Bukti Kendala (Opsional)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-              />
-              {uploading && <p className="text-[11px] text-blue-600 mt-1">Mengunggah foto...</p>}
-              {formData.photoUrl && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Foto berhasil dilampirkan
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Foto Bukti Kendala (Opsional, Maksimal 3 Foto)
+                </label>
+                <span className="text-[11px] font-semibold text-blue-700">
+                  {photoUrls.length}/3 foto terunggah
+                </span>
+              </div>
+
+              {photoUrls.length < 3 && (
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-dashed border-slate-300 rounded-xl p-2 bg-slate-50/50"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Format: JPG, PNG, WEBP (Maks. 5MB per berkas). Foto diunggah langsung ke Cloudflare R2 Storage.
+                  </p>
+                </div>
+              )}
+
+              {uploading && (
+                <div className="flex items-center gap-2 mt-2 text-xs text-blue-600 font-medium">
+                  <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  Mengunggah foto langsung ke Cloudflare R2 via Presigned URL...
+                </div>
+              )}
+
+              {/* Grid Preview Foto */}
+              {photoUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mt-3">
+                  {photoUrls.map((url, index) => (
+                    <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100">
+                      <img
+                        src={url}
+                        alt={`Lampiran ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(index)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-rose-600 text-white shadow-md hover:bg-rose-700 transition"
+                        title="Hapus foto ini"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

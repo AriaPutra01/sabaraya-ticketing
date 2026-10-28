@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { assignTicketRoundRobin } from "@/lib/round-robin";
 import { TicketStatus } from "@prisma/client";
 import { z } from "zod";
 
@@ -46,50 +45,33 @@ export async function POST(
       );
     }
 
-    // Catat log penolakan tiket
-    await prisma.ticketActivity.create({
-      data: {
-        ticketId: id,
-        actorId: session.userId,
-        actorName: session.name,
-        action: "REJECTED",
-        note: `Tiket ditolak oleh ${session.name}. Alasan: ${validated.reason}`,
-      },
-    });
-
-    // Reset status tiket ke PENDING dan kosongkan assignee
-    await prisma.ticket.update({
-      where: { id },
-      data: {
-        assigneeId: null,
-        status: TicketStatus.PENDING,
-        rejectionReason: validated.reason,
-      },
-    });
-
-    // Kumpulkan daftar user yang pernah menolak tiket ini agar tidak ditugaskan lagi
-    const rejectedUserIds = [
-      ...ticket.activities.map((a) => a.actorId).filter(Boolean) as string[],
-      session.userId,
-    ];
-
-    // Otomatis re-assign ke karyawan berikutnya yang terjadwal
-    const reassignResult = await assignTicketRoundRobin(
-      id,
-      ticket.division,
-      ticket.regionId,
-      rejectedUserIds
-    );
+    // Eksekusi penolakan tiket secara atomik
+    await prisma.$transaction([
+      prisma.ticket.update({
+        where: { id },
+        data: {
+          assigneeId: null,
+          status: TicketStatus.PENDING,
+          rejectionReason: validated.reason,
+        },
+      }),
+      prisma.ticketActivity.create({
+        data: {
+          ticketId: id,
+          actorId: session.userId,
+          actorName: session.name,
+          action: "REJECTED",
+          note: `Tiket ditolak oleh ${session.name}. Alasan: ${validated.reason}`,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
-      message: "Tiket berhasil ditolak.",
+      message: "Tiket berhasil ditolak. Status kembali ke PENDING menunggu penugasan admin.",
       data: {
-        reassigned: reassignResult.assigned,
-        nextAssignee: reassignResult.assignee?.name || null,
-        info: reassignResult.assigned
-          ? `Otomatis ditugaskan ke ${reassignResult.assignee?.name}`
-          : "Belum ada karyawan siaga pengganti. Tiket menunggu penugasan manual admin.",
+        reassigned: false,
+        status: TicketStatus.PENDING,
       },
     });
   } catch (error) {

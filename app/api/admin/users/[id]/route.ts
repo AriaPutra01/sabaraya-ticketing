@@ -85,16 +85,20 @@ export async function DELETE(
       );
     }
 
-    // Unlink dari tiket lampau agar tidak melanggar foreign key
-    await prisma.ticket.updateMany({
-      where: { assigneeId: id },
-      data: { assigneeId: null },
-    });
-
-    // Hapus sesi, jadwal siaga, dan pengguna
-    await prisma.user.delete({
-      where: { id },
-    });
+    // Unlink relasi dan hapus pengguna dalam transaksi atomik
+    await prisma.$transaction([
+      prisma.ticket.updateMany({
+        where: { assigneeId: id },
+        data: { assigneeId: null },
+      }),
+      prisma.ticketActivity.updateMany({
+        where: { actorId: id },
+        data: { actorId: null },
+      }),
+      prisma.user.delete({
+        where: { id },
+      }),
+    ]);
 
     return NextResponse.json({ success: true, message: "Pengguna berhasil dihapus permanen." });
   } catch (error) {

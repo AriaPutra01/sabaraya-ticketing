@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import Link from "next/link";
-import { Headphones, ShieldAlert, Search, LogIn } from "lucide-react";
+import { ShieldAlert, Search, LogIn } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Sabaraya Ticketing — Sistem Pengaduan & Layanan Purna Jual",

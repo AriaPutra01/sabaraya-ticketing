@@ -82,25 +82,44 @@ export async function assignTicketRoundRobin(
     };
   }
 
-  // 4. Update Tiket dengan Assignee
-  await prisma.ticket.update({
-    where: { id: ticketId },
-    data: {
-      assigneeId: validCandidate.id,
-      status: TicketStatus.ASSIGNED,
-      assignedAt: now,
-    },
+  // 4. Update Tiket dengan Assignee dalam transaksi atomik
+  const success = await prisma.$transaction(async (tx) => {
+    const currentTicket = await tx.ticket.findUnique({
+      where: { id: ticketId },
+      select: { status: true },
+    });
+
+    if (!currentTicket || currentTicket.status !== TicketStatus.PENDING) {
+      return false;
+    }
+
+    await tx.ticket.update({
+      where: { id: ticketId },
+      data: {
+        assigneeId: validCandidate.id,
+        status: TicketStatus.ASSIGNED,
+        assignedAt: now,
+      },
+    });
+
+    await tx.ticketActivity.create({
+      data: {
+        ticketId,
+        actorName: "Sistem Round-Robin",
+        action: "ASSIGNED",
+        note: `Ditugaskan otomatis ke ${validCandidate.name} (Jadwal Siaga Aktif)`,
+      },
+    });
+
+    return true;
   });
 
-  // 5. Catat Aktivitas Penugasan
-  await prisma.ticketActivity.create({
-    data: {
-      ticketId,
-      actorName: "Sistem Round-Robin",
-      action: "ASSIGNED",
-      note: `Ditugaskan otomatis ke ${validCandidate.name} (Jadwal Siaga Aktif)`,
-    },
-  });
+  if (!success) {
+    return {
+      assigned: false,
+      reason: "Tiket sudah tidak dalam status PENDING atau sudah ditugaskan sebelumnya.",
+    };
+  }
 
   return {
     assigned: true,
