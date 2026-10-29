@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import {
   User, LogOut, Ticket, Calendar, MapPin, Users,
   CheckCircle, XCircle, Plus, RefreshCw, AlertCircle, Clock,
-  Eye, Search, Edit3, Trash2
+  Eye, Search, Edit3, Trash2, MessageSquare, BookOpen
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { LiveChatQueueModal } from "@/components/dashboard/LiveChatQueueModal";
+import { KnowledgeBaseModal } from "@/components/dashboard/KnowledgeBaseModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,6 +31,26 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [divisionFilter, setDivisionFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // AI Chat & Knowledge Modals
+  const [liveChatModalOpen, setLiveChatModalOpen] = useState(false);
+  const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
+
+  // Generic Reusable Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    variant: "danger" | "warning" | "primary";
+    confirmText?: string;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    variant: "danger",
+    onConfirm: async () => {},
+  });
 
   // Modals
   const [detailModal, setDetailModal] = useState<{ open: boolean; ticket: any | null }>({
@@ -150,8 +173,12 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth-changed"));
+    }
     toast.success("Berhasil keluar.");
     router.push("/masuk");
+    router.refresh();
   };
 
   // Open ticket detail
@@ -320,18 +347,28 @@ export default function DashboardPage() {
   };
 
   // Delete Schedule
-  const handleDeleteSchedule = async (id: string) => {
-    if (!confirm("Hapus jadwal ini?")) return;
-    try {
-      const res = await fetch(`/api/admin/schedules/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        loadData();
-      }
-    } catch {
-      toast.error("Gagal menghapus jadwal.");
-    }
+  const handleDeleteSchedule = (id: string) => {
+    setConfirmModal({
+      open: true,
+      title: "Hapus Jadwal Siaga",
+      message: "Apakah Anda yakin ingin menghapus jadwal siaga ini?",
+      variant: "danger",
+      confirmText: "Hapus Jadwal",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/schedules/${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) {
+            toast.success(data.message);
+            loadData();
+          } else {
+            toast.error(data.message);
+          }
+        } catch {
+          toast.error("Gagal menghapus jadwal.");
+        }
+      },
+    });
   };
 
   // Add / Edit Region
@@ -421,37 +458,53 @@ export default function DashboardPage() {
   };
 
   // Delete Region
-  const handleDeleteRegion = async (id: string, name: string) => {
-    if (!confirm(`Hapus daerah ${name} secara permanen?`)) return;
-    try {
-      const res = await fetch(`/api/admin/regions/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        loadData();
-      } else {
-        toast.error(data.message);
-      }
-    } catch {
-      toast.error("Gagal menghapus daerah.");
-    }
+  const handleDeleteRegion = (id: string, name: string) => {
+    setConfirmModal({
+      open: true,
+      title: "Hapus Daerah & Cakupan",
+      message: `Hapus daerah "${name}" secara permanen? Data yang berkaitan mungkin terpengaruh.`,
+      variant: "danger",
+      confirmText: "Hapus Daerah",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/regions/${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) {
+            toast.success(data.message);
+            loadData();
+          } else {
+            toast.error(data.message);
+          }
+        } catch {
+          toast.error("Gagal menghapus daerah.");
+        }
+      },
+    });
   };
 
   // Delete User
-  const handleDeleteUser = async (id: string, name: string) => {
-    if (!confirm(`Hapus pengguna ${name} secara permanen?`)) return;
-    try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        loadData();
-      } else {
-        toast.error(data.message);
-      }
-    } catch {
-      toast.error("Gagal menghapus pengguna.");
-    }
+  const handleDeleteUser = (id: string, name: string) => {
+    setConfirmModal({
+      open: true,
+      title: "Hapus Pengguna",
+      message: `Hapus akun pengguna "${name}" secara permanen? Tindakan ini tidak dapat dibatalkan.`,
+      variant: "danger",
+      confirmText: "Hapus Pengguna",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) {
+            toast.success(data.message);
+            loadData();
+          } else {
+            toast.error(data.message);
+          }
+        } catch {
+          toast.error("Gagal menghapus pengguna.");
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -463,13 +516,13 @@ export default function DashboardPage() {
       {/* Top Banner / User Profile */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-blue-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-ssm-blue text-white flex items-center justify-center font-bold text-lg shadow-sm">
             {user.name.charAt(0)}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-slate-900">{user.name}</h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-ssm-blue-light text-ssm-blue">
                 {user.role} {user.division ? `• ${user.division}` : ""}
               </span>
             </div>
@@ -492,7 +545,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("tickets")}
           className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
             activeTab === "tickets"
-              ? "bg-blue-700 text-white shadow-sm"
+              ? "bg-ssm-blue text-white shadow-sm"
               : "bg-white text-slate-600 hover:bg-slate-100"
           }`}
         >
@@ -506,7 +559,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab("schedules")}
               className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
                 activeTab === "schedules"
-                  ? "bg-blue-700 text-white shadow-sm"
+                  ? "bg-ssm-blue text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -518,7 +571,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab("regions")}
               className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
                 activeTab === "regions"
-                  ? "bg-blue-700 text-white shadow-sm"
+                  ? "bg-ssm-blue text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -533,12 +586,30 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("users")}
             className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
               activeTab === "users"
-                ? "bg-blue-700 text-white shadow-sm"
+                ? "bg-ssm-blue text-white shadow-sm"
                 : "bg-white text-slate-600 hover:bg-slate-100"
             }`}
           >
             <Users className="w-4 h-4" />
             Kelola Pengguna
+          </button>
+        )}
+
+        <button
+          onClick={() => setLiveChatModalOpen(true)}
+          className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition"
+        >
+          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <span>Antrean Live CS</span>
+        </button>
+
+        {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
+          <button
+            onClick={() => setKnowledgeModalOpen(true)}
+            className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-ssm-blue-light/60 hover:bg-ssm-blue-light text-ssm-blue border border-ssm-blue/20 transition"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Basis Pengetahuan AI</span>
           </button>
         )}
 
@@ -563,7 +634,7 @@ export default function DashboardPage() {
                 placeholder="Cari kode tiket, instansi, pelapor, atau judul..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
 
@@ -621,13 +692,13 @@ export default function DashboardPage() {
                 <div key={t.id} className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 hover:border-slate-300 transition">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-blue-900">{t.code}</span>
+                      <span className="font-mono text-sm font-bold text-ssm-blue">{t.code}</span>
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
                         {t.division}
                       </span>
                       <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                         t.status === "PENDING" ? "bg-amber-100 text-amber-800" :
-                        t.status === "ASSIGNED" ? "bg-blue-100 text-blue-800" :
+                        t.status === "ASSIGNED" ? "bg-ssm-blue-light text-ssm-blue" :
                         t.status === "IN_PROGRESS" ? "bg-purple-100 text-purple-800" :
                         t.status === "RESOLVED" ? "bg-emerald-100 text-emerald-800" :
                         "bg-slate-100 text-slate-800"
@@ -731,7 +802,7 @@ export default function DashboardPage() {
                                 .then((res) => res.success && setEmployees(res.data));
                               setAssignModal({ open: true, ticketId: t.id, assigneeId: "" });
                             }}
-                            className="px-3.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                            className="px-3.5 py-1.5 rounded-lg bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
                           >
                             <User className="w-3.5 h-3.5" />
                             Tugaskan Petugas
@@ -789,7 +860,7 @@ export default function DashboardPage() {
                   toast.error("Pastikan data karyawan dan daerah sudah tersedia.");
                 }
               }}
-              className="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold flex items-center gap-1.5 transition"
             >
               <Plus className="w-4 h-4" />
               Tambah Jadwal Siaga
@@ -802,7 +873,7 @@ export default function DashboardPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900">{s.user.name}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ssm-blue-light text-ssm-blue">
                       {s.user.division}
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
@@ -813,7 +884,7 @@ export default function DashboardPage() {
                     Cakupan: {s.region.coverage}
                   </p>
                   <p className="text-xs text-slate-700 mt-1 font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                    <Clock className="w-3.5 h-3.5 text-ssm-blue" />
                     {format(new Date(s.startTime), "dd MMM yyyy, HH:mm", { locale: localeId })} s/d{" "}
                     {format(new Date(s.endTime), "dd MMM yyyy, HH:mm", { locale: localeId })}
                   </p>
@@ -839,7 +910,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-bold text-slate-800">Master Daerah & Cakupan ({regions.length})</h2>
             <button
               onClick={() => setRegionModal({ open: true, isEdit: false, name: "", coverage: "" })}
-              className="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold flex items-center gap-1.5 transition"
             >
               <Plus className="w-4 h-4" />
               Tambah Daerah Baru
@@ -903,7 +974,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-bold text-slate-800">Daftar Pengguna ({usersList.length})</h2>
             <button
               onClick={() => setUserModal({ open: true, isEdit: false, name: "", email: "", password: "", role: "EMPLOYEE", division: "TEKNISI", phone: "", maxActiveTickets: 5 })}
-              className="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold flex items-center gap-1.5 transition"
             >
               <Plus className="w-4 h-4" />
               Tambah Akun Baru
@@ -920,7 +991,7 @@ export default function DashboardPage() {
                       {u.role}
                     </span>
                     {u.division && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ssm-blue-light text-ssm-blue">
                         {u.division}
                       </span>
                     )}
@@ -981,8 +1052,8 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xl font-bold text-blue-900">{detailModal.ticket.code}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                  <span className="font-mono text-xl font-bold text-ssm-blue">{detailModal.ticket.code}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-ssm-blue-light text-ssm-blue">
                     {detailModal.ticket.division}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
@@ -1016,7 +1087,7 @@ export default function DashboardPage() {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-blue-600 transition bg-slate-100"
+                        className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-ssm-blue transition bg-slate-100"
                       >
                         <img src={url} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
                       </a>
@@ -1107,7 +1178,7 @@ export default function DashboardPage() {
                             .then((res) => res.success && setEmployees(res.data));
                           setAssignModal({ open: true, ticketId: detailModal.ticket.id, assigneeId: "" });
                         }}
-                        className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold transition flex items-center gap-1.5"
+                        className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold transition flex items-center gap-1.5"
                       >
                         <User className="w-3.5 h-3.5" />
                         Tugaskan Petugas
@@ -1244,7 +1315,7 @@ export default function DashboardPage() {
               <select
                 value={assignModal.assigneeId}
                 onChange={(e) => setAssignModal({ ...assignModal, assigneeId: e.target.value })}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               >
                 <option value="">-- Pilih Staf --</option>
                 {employees.map((emp) => (
@@ -1266,7 +1337,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={handleManualAssign}
-                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
               >
                 Tugaskan
               </button>
@@ -1352,7 +1423,7 @@ export default function DashboardPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
               >
                 Simpan Jadwal
               </button>
@@ -1403,7 +1474,7 @@ export default function DashboardPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
               >
                 Simpan
               </button>
@@ -1523,7 +1594,7 @@ export default function DashboardPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
               >
                 {userModal.isEdit ? "Perbarui Pengguna" : "Buat Akun"}
               </button>
@@ -1531,6 +1602,30 @@ export default function DashboardPage() {
           </form>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        onClose={() => setConfirmModal({ ...confirmModal, open: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText={confirmModal.confirmText}
+      />
+
+      {/* AI Live CS Queue Modal */}
+      <LiveChatQueueModal
+        isOpen={liveChatModalOpen}
+        onClose={() => setLiveChatModalOpen(false)}
+        currentUser={user}
+      />
+
+      {/* AI Knowledge Base RAG Modal */}
+      <KnowledgeBaseModal
+        isOpen={knowledgeModalOpen}
+        onClose={() => setKnowledgeModalOpen(false)}
+      />
     </div>
   );
 }

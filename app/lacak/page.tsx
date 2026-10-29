@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Clock, Building, Shield, ArrowRight } from "lucide-react";
+import { Search, Clock, Building, Shield, ArrowRight, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -62,7 +62,7 @@ function TrackContent() {
       case "PENDING":
         return <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Menunggu Penugasan</span>;
       case "ASSIGNED":
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Petugas Ditugaskan</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-ssm-blue-light text-ssm-blue">Petugas Ditugaskan</span>;
       case "IN_PROGRESS":
         return <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">Sedang Dikerjakan</span>;
       case "RESOLVED":
@@ -104,7 +104,7 @@ function TrackContent() {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-semibold text-sm transition disabled:opacity-50"
+          className="px-6 py-2.5 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-semibold text-sm transition disabled:opacity-50"
         >
           {loading ? "Mencari..." : "Lacak Tiket"}
         </button>
@@ -116,7 +116,7 @@ function TrackContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-2xl font-black text-blue-900 tracking-wider">
+                <span className="font-mono text-2xl font-black text-ssm-blue tracking-wider">
                   {activeTicket.code}
                 </span>
                 {getStatusBadge(activeTicket.status)}
@@ -134,7 +134,7 @@ function TrackContent() {
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
               <p className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                <Building className="w-4 h-4 text-blue-600" />
+                <Building className="w-4 h-4 text-ssm-blue" />
                 Informasi Instansi & Pelapor
               </p>
               <p><span className="text-slate-500">Instansi:</span> <b className="text-slate-800">{activeTicket.institutionName}</b></p>
@@ -177,7 +177,7 @@ function TrackContent() {
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-blue-600 transition bg-slate-100"
+                    className="block rounded-xl overflow-hidden border border-slate-200 aspect-video hover:opacity-90 hover:ring-2 hover:ring-ssm-blue transition bg-slate-100"
                   >
                     <img src={url} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
                   </a>
@@ -186,16 +186,43 @@ function TrackContent() {
             </div>
           )}
 
+          {/* Pusat Bantuan & Live Chat Terkait Tiket */}
+          <div className="p-4 rounded-2xl bg-ssm-blue-light/60 border border-ssm-blue/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-ssm-blue flex items-center gap-1.5">
+                <MessageSquare className="w-4 h-4 text-ssm-blue" />
+                Pusat Bantuan & Live CS Tiket
+              </p>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Konsultasikan kendala atau tanyakan tindak lanjut tiket ini langsung kepada CS & AI Assistant.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("open-ticket-chat", {
+                    detail: { ticketCode: activeTicket.code },
+                  })
+                );
+              }}
+              className="px-4 py-2.5 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition shrink-0"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat CS Tiket Ini</span>
+            </button>
+          </div>
+
           {/* Activities Timeline */}
           <div>
             <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600" />
+              <Clock className="w-4 h-4 text-ssm-blue" />
               Riwayat Perjalanan Tiket
             </h3>
             <div className="space-y-3">
               {activeTicket.activities?.map((act: any) => (
                 <div key={act.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                  <div className="w-2 h-2 mt-1.5 rounded-full bg-blue-600" />
+                  <div className="w-2 h-2 mt-1.5 rounded-full bg-ssm-blue" />
                   <div className="flex-1">
                     <p className="font-semibold text-slate-800">{act.note || act.action}</p>
                     <p className="text-slate-400 text-[10px] mt-0.5">
@@ -213,7 +240,7 @@ function TrackContent() {
       {historyTickets.length > 0 && !activeTicket && (
         <div className="space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-600" />
+            <Clock className="w-4 h-4 text-ssm-blue" />
             Pengaduan Terakhir di Perangkat Ini
           </h2>
 
@@ -225,11 +252,11 @@ function TrackContent() {
                   setInputCode(t.code);
                   searchTicket(t.code);
                 }}
-                className="w-full p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-400 hover:shadow-sm text-left flex items-center justify-between transition group"
+                className="w-full p-4 rounded-2xl bg-white border border-slate-200 hover:border-ssm-blue hover:shadow-sm text-left flex items-center justify-between transition group"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm text-blue-900">{t.code}</span>
+                    <span className="font-mono font-bold text-sm text-ssm-blue">{t.code}</span>
                     {getStatusBadge(t.status)}
                   </div>
                   <p className="text-xs font-semibold text-slate-800 mt-1">{t.title}</p>
@@ -237,7 +264,7 @@ function TrackContent() {
                     {t.institutionName} • Wilayah: {t.region?.name || "-"}
                   </p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-ssm-blue transition" />
               </button>
             ))}
           </div>

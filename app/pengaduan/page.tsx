@@ -191,20 +191,20 @@ export default function PengaduanPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-            <span className="font-mono text-xl font-bold tracking-wider text-blue-900">
+            <span className="font-mono text-xl font-bold tracking-wider text-ssm-blue">
               {successData.code}
             </span>
             <button
               onClick={() => copyCode(successData.code)}
-              className="p-2 text-slate-600 hover:text-blue-700 hover:bg-slate-200 rounded-lg transition"
+              className="p-2 text-slate-600 hover:text-ssm-blue hover:bg-slate-200 rounded-lg transition"
               title="Salin Kode"
             >
               <Copy className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-left text-xs text-blue-900 space-y-1">
-            <p className="font-semibold">Status Penugasan:</p>
+          <div className="p-4 rounded-xl bg-ssm-blue-light/60 border border-ssm-blue/20 text-left text-xs text-slate-800 space-y-1">
+            <p className="font-semibold text-ssm-blue">Status Penugasan:</p>
             <p className="text-amber-800 font-medium">
               ⏳ Berhasil terdaftar (Menunggu Penugasan). Tim operasional sedang meninjau dan menugaskan staf siaga terdekat.
             </p>
@@ -216,7 +216,7 @@ export default function PengaduanPage() {
           <div className="flex gap-3">
             <button
               onClick={() => router.push(`/lacak?code=${successData.code}`)}
-              className="flex-1 py-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-semibold text-sm transition"
+              className="flex-1 py-3 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-semibold text-sm transition"
             >
               Lacak Tiket Sekarang
             </button>
@@ -269,11 +269,11 @@ export default function PengaduanPage() {
               onClick={() => setFormData({ ...formData, division: "TEKNISI" })}
               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition ${
                 formData.division === "TEKNISI"
-                  ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20 text-blue-900"
+                  ? "border-ssm-blue bg-ssm-blue-light/60 ring-2 ring-ssm-blue/20 text-ssm-blue"
                   : "border-slate-200 hover:border-slate-300 text-slate-700"
               }`}
             >
-              <div className={`p-2.5 rounded-xl ${formData.division === "TEKNISI" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+              <div className={`p-2.5 rounded-xl ${formData.division === "TEKNISI" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"}`}>
                 <Wrench className="w-5 h-5" />
               </div>
               <div>
@@ -287,11 +287,11 @@ export default function PengaduanPage() {
               onClick={() => setFormData({ ...formData, division: "IT" })}
               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition ${
                 formData.division === "IT"
-                  ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20 text-blue-900"
+                  ? "border-ssm-blue bg-ssm-blue-light/60 ring-2 ring-ssm-blue/20 text-ssm-blue"
                   : "border-slate-200 hover:border-slate-300 text-slate-700"
               }`}
             >
-              <div className={`p-2.5 rounded-xl ${formData.division === "IT" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+              <div className={`p-2.5 rounded-xl ${formData.division === "IT" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"}`}>
                 <Monitor className="w-5 h-5" />
               </div>
               <div>
@@ -305,7 +305,7 @@ export default function PengaduanPage() {
         {/* 2. Pilih Daerah */}
         <div>
           <label className="block text-sm font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-blue-600" />
+            <MapPin className="w-4 h-4 text-ssm-blue" />
             2. Wilayah / Daerah Instansi Anda
           </label>
           <p className="text-xs text-slate-500 mb-2">
@@ -316,7 +316,7 @@ export default function PengaduanPage() {
             value={formData.regionId}
             onChange={(e) => setFormData({ ...formData, regionId: e.target.value })}
             required
-            className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue focus:border-transparent"
           >
             {regions.map((r) => (
               <option key={r.id} value={r.id}>
@@ -336,7 +336,7 @@ export default function PengaduanPage() {
         {/* 3. Identitas Pengadu */}
         <div className="space-y-4 pt-2 border-t border-slate-100">
           <label className="block text-sm font-bold text-slate-900 flex items-center gap-1.5">
-            <Building2 className="w-4 h-4 text-blue-600" />
+            <Building2 className="w-4 h-4 text-ssm-blue" />
             3. Identitas Instansi & Kontak
           </label>
 
@@ -351,7 +351,7 @@ export default function PengaduanPage() {
                 placeholder="Contoh: RSUD Cibabat / Lab Pramita"
                 value={formData.institutionName}
                 onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
 
@@ -365,7 +365,7 @@ export default function PengaduanPage() {
                 placeholder="Nama Anda"
                 value={formData.reporterName}
                 onChange={(e) => setFormData({ ...formData, reporterName: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
 
@@ -379,7 +379,7 @@ export default function PengaduanPage() {
                 placeholder="08123456789"
                 value={formData.reporterPhone}
                 onChange={(e) => setFormData({ ...formData, reporterPhone: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
 
@@ -392,7 +392,7 @@ export default function PengaduanPage() {
                 placeholder="Jl. Raya Barat No. 123, Cimahi"
                 value={formData.reporterAddress}
                 onChange={(e) => setFormData({ ...formData, reporterAddress: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
           </div>
@@ -401,7 +401,7 @@ export default function PengaduanPage() {
         {/* 4. Rincian Perangkat & Keluhan */}
         <div className="space-y-4 pt-2 border-t border-slate-100">
           <label className="block text-sm font-bold text-slate-900 flex items-center gap-1.5">
-            <AlertCircle className="w-4 h-4 text-blue-600" />
+            <AlertCircle className="w-4 h-4 text-ssm-blue" />
             4. Detail Perangkat & Permasalahan
           </label>
 
@@ -415,7 +415,7 @@ export default function PengaduanPage() {
                 placeholder="Contoh: Mindray BC-3000 / Server LIS"
                 value={formData.deviceBrand}
                 onChange={(e) => setFormData({ ...formData, deviceBrand: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
 
@@ -428,7 +428,7 @@ export default function PengaduanPage() {
                 placeholder="Contoh: SN-BC3000-8812"
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
           </div>
@@ -443,7 +443,7 @@ export default function PengaduanPage() {
               placeholder="Contoh: Alat tiba-tiba mati total saat running sampel"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
             />
           </div>
 
@@ -457,7 +457,7 @@ export default function PengaduanPage() {
               placeholder="Jelaskan secara rinci kronologi kejadian, pesan error yang muncul, atau tindakan awal yang sudah dilakukan..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
             />
           </div>
 
@@ -469,7 +469,7 @@ export default function PengaduanPage() {
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               >
                 <option value="LOW">Rendah (Pertanyaan umum / konsultasi)</option>
                 <option value="MEDIUM">Sedang (Kendala minor / pekerjaan masih bisa jalan)</option>
@@ -484,7 +484,7 @@ export default function PengaduanPage() {
                 <label className="block text-xs font-semibold text-slate-700">
                   Foto Bukti Kendala (Opsional, Maksimal 3 Foto)
                 </label>
-                <span className="text-[11px] font-semibold text-blue-700">
+                <span className="text-[11px] font-semibold text-ssm-blue">
                   {photoUrls.length}/3 foto terunggah
                 </span>
               </div>
@@ -497,7 +497,7 @@ export default function PengaduanPage() {
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleFileUpload}
                     disabled={uploading}
-                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-dashed border-slate-300 rounded-xl p-2 bg-slate-50/50"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-ssm-blue-light file:text-ssm-blue hover:file:bg-ssm-blue-light/80 cursor-pointer border border-dashed border-slate-300 rounded-xl p-2 bg-slate-50/50"
                   />
                   <p className="text-[11px] text-slate-400 mt-1">
                     Format: JPG, PNG, WEBP (Maks. 5MB per berkas). Foto diunggah langsung ke Cloudflare R2 Storage.
@@ -506,8 +506,8 @@ export default function PengaduanPage() {
               )}
 
               {uploading && (
-                <div className="flex items-center gap-2 mt-2 text-xs text-blue-600 font-medium">
-                  <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center gap-2 mt-2 text-xs text-ssm-blue font-medium">
+                  <div className="w-3.5 h-3.5 border-2 border-ssm-blue border-t-transparent rounded-full animate-spin" />
                   Mengunggah foto langsung ke Cloudflare R2 via Presigned URL...
                 </div>
               )}
@@ -541,7 +541,7 @@ export default function PengaduanPage() {
         <button
           type="submit"
           disabled={loading || uploading}
-          className="w-full py-4 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-base shadow-lg shadow-blue-700/20 transition disabled:opacity-50"
+          className="w-full py-3.5 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-bold text-sm shadow-xs transition disabled:opacity-50"
         >
           {loading ? "Memproses & Menugaskan Petugas..." : "Kirim Pengaduan Sekarang"}
         </button>

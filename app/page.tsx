@@ -4,30 +4,32 @@ import { Wrench, Monitor, ShieldCheck, Clock, MapPin, ArrowRight } from "lucide-
 export default function HomePage() {
   return (
     <div className="space-y-12">
-      {/* Hero Section */}
-      <section className="text-center py-12 px-4 sm:px-6 rounded-3xl bg-gradient-to-b from-blue-900 via-blue-800 to-slate-900 text-white shadow-xl">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-700/50 text-blue-200 text-xs font-semibold mb-6 border border-blue-500/30">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          Penugasan Teknisi & IT Siaga Lokasi Terdekat
+      {/* Hero Section - Clean Enterprise Medical Theme */}
+      <section className="text-center py-14 px-6 rounded-3xl bg-white border border-slate-200 shadow-xs relative overflow-hidden">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ssm-blue-light text-ssm-blue text-xs font-bold mb-6 border border-ssm-blue/20">
+          <ShieldCheck className="w-4 h-4 text-ssm-blue" />
+          Layanan Siaga Alat Laboratorium & IT Rumah Sakit
         </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
-          Layanan Cepat Penanganan Kendala Laboratorium & Rumah Sakit
+
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
+          Penanganan Cepat Kendala Fasilitas Kesehatan & Laboratorium
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-blue-100/90 max-w-2xl mx-auto">
-          Laporkan kendala alat lab (Mindray, Sysmex, dll.) atau sistem IT LIS langsung tanpa perlu mendaftar akun. Tiket Anda akan otomatis ditugaskan ke staf siaga di wilayah Anda.
+
+        <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          Laporkan kendala perangkat medis (Mindray, Sysmex, dll.) atau sistem IT LIS langsung tanpa registrasi akun. Tiket pengaduan diteruskan ke teknisi siaga di zona wilayah Anda.
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/pengaduan"
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-base shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition"
           >
-            Ajukan Pengaduan Sekarang
-            <ArrowRight className="w-5 h-5" />
+            <span>Ajukan Pengaduan Baru</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/lacak"
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-base border border-white/20 flex items-center justify-center gap-2 transition"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-300/80 flex items-center justify-center gap-2 transition"
           >
             Lacak Status Tiket
           </Link>
@@ -36,63 +38,75 @@ export default function HomePage() {
 
       {/* 2 Divisions Grid */}
       <section className="grid md:grid-cols-2 gap-6">
-        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-5">
+        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
+          <div className="w-12 h-12 rounded-xl bg-ssm-blue-light text-ssm-blue flex items-center justify-center mb-5 border border-ssm-blue/20">
             <Wrench className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold text-slate-900">Divisi Teknisi Alat Medis</h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Menangani kendala fisik perangkat laboratorium, alat tidak menyala, hasil pemeriksaan tidak akurat, kalibrasi rutin, serta perawatan preventif unit di lokasi.
+            Menangani kendala fisik perangkat laboratorium, unit tidak menyala, deviasi hasil pemeriksaan, kalibrasi berkala, serta pemeliharaan preventif di lokasi faskes.
           </p>
-          <ul className="mt-4 space-y-2 text-xs text-slate-500 font-medium">
-            <li className="flex items-center gap-2">✓ Penjadwalan siaga teknisi per zona wilayah</li>
-            <li className="flex items-center gap-2">✓ Dukungan unit hematology, clinical chemistry, dll.</li>
+          <ul className="mt-5 space-y-2.5 text-xs text-slate-600 font-medium">
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              Penjadwalan siaga teknisi per zona wilayah
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              Dukungan unit hematology, clinical chemistry, dan elektroda
+            </li>
           </ul>
         </div>
 
-        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5">
+        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
+          <div className="w-12 h-12 rounded-xl bg-ssm-blue-light text-ssm-blue flex items-center justify-center mb-5 border border-ssm-blue/20">
             <Monitor className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold text-slate-900">Divisi IT & Sistem LIS</h2>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Menangani kendala aplikasi Laboratory Information System (LIS), bridging data antar sistem RS, sinkronisasi hasil lab, akun pengguna, dan format laporan cetak.
+            Menangani kendala aplikasi Laboratory Information System (LIS), bridging data SIMRS, sinkronisasi hasil otomatis, otorisasi akun pengguna, dan format pelaporan cetak.
           </p>
-          <ul className="mt-4 space-y-2 text-xs text-slate-500 font-medium">
-            <li className="flex items-center gap-2">✓ Penanganan remote cepat & on-site jika diperlukan</li>
-            <li className="flex items-center gap-2">✓ Verifikasi bridging & integritas database lab</li>
+          <ul className="mt-5 space-y-2.5 text-xs text-slate-600 font-medium">
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              Penanganan remote cepat & on-site terkoordinasi
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              Verifikasi bridging protokol HL7 & integritas database lab
+            </li>
           </ul>
         </div>
       </section>
 
-      {/* Feature Highlights */}
-      <section className="p-8 rounded-2xl bg-slate-900 text-white">
-        <div className="grid sm:grid-cols-3 gap-6 text-center">
+      {/* Feature Highlights - Clean Slate Contrast */}
+      <section className="p-8 sm:p-10 rounded-2xl bg-slate-900 text-white">
+        <div className="grid sm:grid-cols-3 gap-8 text-center sm:text-left">
           <div>
-            <div className="w-10 h-10 mx-auto rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-xl bg-ssm-blue/30 text-sky-200 flex items-center justify-center mb-3.5">
               <MapPin className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base">Cakupan Wilayah Cerdas</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              Setiap tiket otomatis diteruskan ke petugas yang memiliki jadwal siaga di daerah pengadu.
+            <h3 className="font-bold text-base text-white">Cakupan Wilayah Siaga</h3>
+            <p className="mt-1.5 text-xs text-slate-300 leading-relaxed">
+              Setiap tiket otomatis diarahkan kepada petugas yang memiliki jadwal siaga aktif di area fasilitas kesehatan pengadu.
             </p>
           </div>
           <div>
-            <div className="w-10 h-10 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-xl bg-ssm-blue/30 text-sky-200 flex items-center justify-center mb-3.5">
               <Clock className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base">Tanpa Login / Akun Tamu</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              Riwayat tiket tersimpan otomatis di browser pengadu via cookie aman untuk kemudahan pelacakan.
+            <h3 className="font-bold text-base text-white">Pelaporan Publik Instan</h3>
+            <p className="mt-1.5 text-xs text-slate-300 leading-relaxed">
+              Pelapor cukup mengisi formulir tanpa login. Riwayat tiket dapat diakses kapan saja melalui nomor referensi resmi.
             </p>
           </div>
           <div>
-            <div className="w-10 h-10 mx-auto rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center mb-3.5">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base">Respons Bertanggung Jawab</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              Penolakan tiket oleh karyawan wajib menyertakan alasan jelas dan langsung dilempar ke petugas siaga lain.
+            <h3 className="font-bold text-base text-white">Eskalasi & Akuntabilitas</h3>
+            <p className="mt-1.5 text-xs text-slate-300 leading-relaxed">
+              Penolakan tugas wajib menyertakan alasan terverifikasi dan otomatis dilempar ke teknisi siaga lain untuk mencegah kendala terbengkalai.
             </p>
           </div>
         </div>

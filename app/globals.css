@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ssm-blue: #0a4d94;
+  --color-ssm-blue-hover: #083b72;
+  --color-ssm-blue-light: #eff6ff;
+  --color-ssm-red: #d32f2f;
+  --color-ssm-red-hover: #b71c1c;
+  --color-ssm-red-light: #fef2f2;
+
+  /* Harmonisasi palet blue Tailwind dengan identitas SSM Blue */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #1d4ed8;
+  --color-blue-600: #0a4d94;
+  --color-blue-700: #083b72;
+  --color-blue-800: #062b54;
+  --color-blue-900: #041c38;
+}
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
