@@ -8,9 +8,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Agent Guidelines for Sabaraya Ticketing
+# Agent Guidelines for Sabaraya Ticketing — PT Sabaraya Sagara Mandiri
 
-This document outlines architectural decisions, design patterns, coding conventions, and operational workflows for AI agents working in this repository.
+This document outlines architectural decisions, design patterns, coding conventions, and operational workflows for AI agents working in this repository for **PT Sabaraya Sagara Mandiri**.
 
 ---
 
@@ -18,9 +18,11 @@ This document outlines architectural decisions, design patterns, coding conventi
 
 - **Framework**: Next.js 16.4 App Router with Turbopack and React 19.
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`).
-- **Database**: PostgreSQL (Neon Serverless compatible) accessed via Prisma ORM v6.
+- **Database**: PostgreSQL (Neon Serverless compatible) accessed via Prisma ORM v6 with `pgvector` extension for semantic search.
 - **Auth**: Stateless JWT (`access_token` in 15-min HTTP-only cookie) backed by stateful PostgreSQL `sessions` table (`refresh_token` with 7-day rotation). **No Redis**.
 - **Object Storage**: Cloudflare R2 via AWS S3 SDK v3 presigned URLs (`lib/s3.ts`). Direct client-to-R2 `PUT` uploads with local base64 fallback.
+- **AI & RAG Gateway**: Vercel AI SDK (`ai` v7 + `@ai-sdk/openai`), OpenRouter endpoint (`openai/gpt-6-luna`), `openai/text-embedding-3-small` (1536 dimensions).
+- **Realtime Layer**: Pusher Channels for live chat takeover with automatic 3s polling fallback.
 
 ---
 
@@ -36,22 +38,38 @@ This document outlines architectural decisions, design patterns, coding conventi
 5. **Resolution (`POST /api/tickets/[id]/resolve`)**: Employee or Admin records resolution notes. Status moves to `RESOLVED` with `resolvedAt`.
 6. **Closing (`POST /api/tickets/[id]/close`)**: Admin/Superadmin officially closes ticket. Status moves to `CLOSED`.
 
-### 2.2 Roles & Permissions
-- `SUPERADMIN`: Full access (can manage/delete users, edit regions, schedules, tickets).
-- `ADMIN`: Operational management (cannot delete users; can assign tickets, manage regions, schedules).
-- `EMPLOYEE`: Field technician / IT staff. Only views tickets assigned to them; can accept, reject, and resolve assigned tickets.
+### 2.2 AI Chatbot & Live CS Handoff
+1. **Guest Public Session & Ephemeral State**: Floating widget (`components/chat/FloatingChatWidget.tsx`) runs ephemeral AI chat without creating empty rows in PostgreSQL. A persistent database session is only created when:
+   - Linked directly to a valid ticket code (`ticketCode`), OR
+   - The user completes the pre-escalation gate (`handleSubmitEscalation`) with valid name and institution/faskes.
+2. **Session Anti-Lockout Reset**: When a session reaches `CLOSED`, the UI provides an immediate "Mulai Chat Baru" action that purges `sbr_chat_token` from `localStorage` and resets the widget state.
+3. **RAG Semantic Retrieval**: When user sends a message, `searchKnowledgeBase()` in `lib/ai.ts` performs cosine distance lookup against `knowledge_chunks` and injects context into the system prompt.
+4. **Escalation Tool Call**: If user asks for a human agent or problem is complex, LLM triggers `escalateToHumanAgent` tool, moving status to `WAITING_FOR_AGENT` and posting an audit notice.
+5. **Staff Takeover**: Employees/Admins see active requests in `LiveChatQueueModal.tsx`, claim the session (`AGENT_ACTIVE`), and chat live via `/api/chat/message` broadcasted over Pusher channel `chat-[id]`. Session lookup in `GET /api/chat/session` supports both `id` and `token`.
+
+### 2.3 Roles & Authorization
+- `SUPERADMIN`: Full access (can manage/delete users, edit regions, schedules, tickets, knowledge base).
+- `ADMIN`: Operational management (can assign tickets, manage regions, schedules, knowledge base; cannot delete users).
+- `EMPLOYEE`: Field technician / IT staff. Only views tickets assigned to them; can accept, reject, resolve assigned tickets, and takeover live chat sessions.
+- **Dynamic Header & Redirection**:
+  - `RootLayout` uses `<Suspense fallback={<AuthNavFallback />}><AuthNavButton /></Suspense>` to stream navigation state dynamically: shows "Dashboard" (`/dashboard`) if logged in, or "Portal Staf" (`/masuk`) if unauthenticated.
+  - Visiting `/masuk` while holding a valid session triggers a server-side redirect (`redirect("/dashboard")`) via `export const instant = false;` and `await connection();`.
 
 ---
 
 ## 3. Strict Coding Conventions for Agents
 
 1. **Database Atomicity (`prisma.$transaction`)**:
-   Every state change on `Ticket` that writes an entry to `TicketActivity` MUST be executed within a single `prisma.$transaction`. Never perform disjoint queries that can leave orphan statuses or missing audit trails.
+   Every state change on `Ticket` that writes an entry to `TicketActivity`, or `ChatSession` state changes, MUST be executed within a single `prisma.$transaction`. Never perform disjoint queries that can leave orphan statuses or missing audit trails.
 2. **Next.js 16 Cache & Dynamic Rendering**:
    Do NOT use `export const dynamic = "force-dynamic"` in Server Components or dynamic Route Handlers (conflicts with `cacheComponents`). Instead, import and await `connection()`:
    ```ts
    import { connection } from "next/server";
    await connection();
+   ```
+   If a Server Component route performs root-level auth checks or dynamic cookie access before rendering (like `app/masuk/page.tsx`), use:
+   ```ts
+   export const instant = false;
    ```
 3. **Zod v4 Schema Validation**:
    Zod v4 returns error issues under `error.issues`, NOT `error.errors`. Always extract messages via `error.issues[0]?.message`.
@@ -61,6 +79,10 @@ This document outlines architectural decisions, design patterns, coding conventi
    Tokens are stored in HTTP-only, `sameSite: "lax"`, secure (in production) cookies. Never expose token secrets or sensitive user password hashes in API responses.
 6. **Presigned R2 Uploads**:
    Max 3 images per ticket, max 5MB per file, allowed types: `image/jpeg`, `image/png`, `image/webp`. Uploads from browser to R2 run in parallel via `Promise.all`.
+7. **Pusher & AI Fallback**:
+   Always maintain silent fallback handling in `lib/pusher.ts` and `lib/ai.ts` so the system operates cleanly in development even if third-party keys are not yet configured.
+8. **Brand Identity & Corporate Palette (PT Sabaraya Sagara Mandiri)**:
+   Primary brand color is `#0A4D94` (`ssm-blue`), hover is `#083B72` (`ssm-blue-hover`), soft tint is `#EFF6FF` (`ssm-blue-light`), and urgent/danger is `#D32F2F` (`ssm-red`). All action buttons, navigation tabs, badges, input focus rings, and spinners MUST use these tokens. Reusable `<ConfirmModal>` from `@/components/ui/ConfirmModal` MUST be used instead of browser native `confirm()` popups.
 
 ---
 
