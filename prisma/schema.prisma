@@ -47,6 +47,7 @@ model User {
   schedules        EmployeeSchedule[]
   assignedTickets  Ticket[]           @relation("AssigneeTickets")
   activities       TicketActivity[]
+  handledChats     ChatSession[]      @relation("AgentChatSessions")
   sessions         Session[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
@@ -122,6 +123,7 @@ model Ticket {
   rejectionReason String?
   resolutionNote  String?
   activities      TicketActivity[]
+  chatSession     ChatSession?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -143,3 +145,74 @@ model TicketActivity {
   @@index([ticketId])
   @@map("ticket_activities")
 }
+
+enum ChatSessionStatus {
+  BOT_ACTIVE
+  WAITING_FOR_AGENT
+  AGENT_ACTIVE
+  CLOSED
+}
+
+enum MessageSender {
+  USER
+  BOT
+  AGENT
+  SYSTEM
+}
+
+model ChatSession {
+  id           String            @id @default(uuid())
+  sessionToken String            @unique
+  ticketId     String?           @unique
+  ticket       Ticket?           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userName     String?
+  userContact  String?
+  status       ChatSessionStatus @default(BOT_ACTIVE)
+  assignedToId String?
+  assignedTo   User?             @relation("AgentChatSessions", fields: [assignedToId], references: [id])
+  messages     ChatMessage[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status, assignedToId])
+  @@index([ticketId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String        @id @default(uuid())
+  sessionId String
+  session   ChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    MessageSender
+  senderId  String?
+  content   String
+  createdAt DateTime      @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model KnowledgeDocument {
+  id        String           @id @default(uuid())
+  title     String
+  category  String           @default("FAQ")
+  content   String
+  chunks    KnowledgeChunk[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id         String                     @id @default(uuid())
+  documentId String
+  document   KnowledgeDocument          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime                   @default(now())
+
+  @@index([documentId])
+  @@map("knowledge_chunks")
+}
+
