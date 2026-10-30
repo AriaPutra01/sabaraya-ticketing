@@ -454,7 +454,7 @@ export function FloatingChatWidget() {
 
       {/* Jendela Chat Terbuka */}
       {isOpen && (
-        <div className="w-[calc(100vw-1.5rem)] sm:w-96 h-[500px] max-h-[82vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="w-[calc(100vw-1.5rem)] sm:w-96 h-125 max-h-[82vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-2.5">
