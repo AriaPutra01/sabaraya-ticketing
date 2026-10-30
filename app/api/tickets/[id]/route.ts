@@ -1,15 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
+  const { session, errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
 
   const { id } = await params;
 
@@ -28,26 +27,15 @@ export async function GET(
     });
 
     if (!ticket) {
-      return NextResponse.json(
-        { success: false, message: "Tiket tidak ditemukan." },
-        { status: 404 }
-      );
+      return apiError("Tiket tidak ditemukan.", 404);
     }
 
-    // Jika Employee, pastikan tiket ini ditugaskan padanya
-    if (session.role === "EMPLOYEE" && ticket.assigneeId !== session.userId) {
-      return NextResponse.json(
-        { success: false, message: "Akses ditolak ke tiket ini." },
-        { status: 403 }
-      );
+    if (session!.role === "EMPLOYEE" && ticket.assigneeId !== session!.userId) {
+      return apiError("Akses ditolak ke tiket ini.", 403);
     }
 
-    return NextResponse.json({ success: true, data: ticket });
+    return apiSuccess(ticket);
   } catch (error) {
-    console.error("Failed to fetch ticket detail:", error);
-    return NextResponse.json(
-      { success: false, message: "Gagal mengambil detail tiket." },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Gagal mengambil detail tiket.");
   }
 }

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, hashPassword } from "@/lib/auth";
+import { requireAuth, hashPassword } from "@/lib/auth";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 import { Role, Division } from "@prisma/client";
 import { z } from "zod";
 
@@ -15,10 +16,8 @@ const createUserSchema = z.object({
 });
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "SUPERADMIN") {
-    return NextResponse.json({ success: false, message: "Akses khusus Superadmin." }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const users = await prisma.user.findMany({
@@ -36,18 +35,15 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ success: true, data: users });
+    return apiSuccess(users);
   } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return NextResponse.json({ success: false, message: "Gagal mengambil data pengguna." }, { status: 500 });
+    return handleRouteError(error, "Gagal mengambil data pengguna.");
   }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "SUPERADMIN") {
-    return NextResponse.json({ success: false, message: "Akses khusus Superadmin." }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const body = await req.json();
@@ -57,7 +53,7 @@ export async function POST(req: NextRequest) {
       where: { email: data.email.toLowerCase() },
     });
     if (existing) {
-      return NextResponse.json({ success: false, message: "Email sudah terdaftar." }, { status: 400 });
+      return apiError("Email sudah terdaftar.", 400);
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -81,12 +77,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, message: "Pengguna berhasil dibuat.", data: newUser });
+    return apiSuccess(newUser, "Pengguna berhasil dibuat.", 201);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, message: error.issues[0]?.message || "Input tidak valid" }, { status: 400 });
-    }
-    console.error("Failed to create user:", error);
-    return NextResponse.json({ success: false, message: "Gagal membuat pengguna." }, { status: 500 });
+    return handleRouteError(error, "Gagal membuat pengguna.");
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, connection } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess, handleRouteError } from "@/lib/api-response";
 import { Division, TicketPriority, TicketStatus } from "@prisma/client";
 import { z } from "zod";
 
@@ -100,26 +101,14 @@ export async function POST(req: NextRequest) {
 
     return res;
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, message: error.issues[0]?.message || "Input tidak valid" },
-        { status: 400 }
-      );
-    }
-    console.error("Failed to create ticket:", error);
-    return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server saat membuat tiket." },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Terjadi kesalahan server saat membuat tiket.");
   }
 }
 
 export async function GET(req: NextRequest) {
   await connection();
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
+  const { session, errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -129,9 +118,9 @@ export async function GET(req: NextRequest) {
 
   const where: any = {};
 
-  if (session.role === "EMPLOYEE") {
+  if (session!.role === "EMPLOYEE") {
     // Karyawan hanya melihat tiket yang di-assign padanya
-    where.assigneeId = session.userId;
+    where.assigneeId = session!.userId;
   }
 
   if (status && status !== "ALL") {
@@ -162,12 +151,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: tickets });
+    return apiSuccess(tickets);
   } catch (error) {
-    console.error("Failed to fetch tickets:", error);
-    return NextResponse.json(
-      { success: false, message: "Gagal mengambil daftar tiket." },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Gagal mengambil daftar tiket.");
   }
 }

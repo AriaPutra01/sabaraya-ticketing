@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 import { z } from "zod";
 
 const createScheduleSchema = z.object({
@@ -12,10 +13,8 @@ const createScheduleSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const { searchParams } = new URL(req.url);
   const regionId = searchParams.get("regionId");
@@ -35,18 +34,15 @@ export async function GET(req: NextRequest) {
       orderBy: { startTime: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: schedules });
+    return apiSuccess(schedules);
   } catch (error) {
-    console.error("Failed to fetch schedules:", error);
-    return NextResponse.json({ success: false, message: "Gagal mengambil data jadwal." }, { status: 500 });
+    return handleRouteError(error, "Gagal mengambil data jadwal.");
   }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const body = await req.json();
@@ -56,7 +52,7 @@ export async function POST(req: NextRequest) {
     const end = new Date(data.endTime);
 
     if (end <= start) {
-      return NextResponse.json({ success: false, message: "Waktu selesai harus lebih besar dari waktu mulai." }, { status: 400 });
+      return apiError("Waktu selesai harus lebih besar dari waktu mulai.", 400);
     }
 
     const schedule = await prisma.employeeSchedule.create({
@@ -73,12 +69,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, message: "Jadwal berhasil ditambahkan.", data: schedule });
+    return apiSuccess(schedule, "Jadwal berhasil ditambahkan.", 201);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, message: error.issues[0]?.message || "Input tidak valid" }, { status: 400 });
-    }
-    console.error("Failed to create schedule:", error);
-    return NextResponse.json({ success: false, message: "Gagal menambahkan jadwal." }, { status: 500 });
+    return handleRouteError(error, "Gagal menambahkan jadwal.");
   }
 }

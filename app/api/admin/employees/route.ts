@@ -1,12 +1,10 @@
-import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { apiSuccess, handleRouteError } from "@/lib/api-response";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const employees = await prisma.user.findMany({
@@ -22,9 +20,8 @@ export async function GET() {
       orderBy: { name: "asc" },
     });
 
-    return NextResponse.json({ success: true, data: employees });
+    return apiSuccess(employees);
   } catch (error) {
-    console.error("Failed to fetch employees:", error);
-    return NextResponse.json({ success: false, message: "Gagal mengambil data karyawan." }, { status: 500 });
+    return handleRouteError(error, "Gagal mengambil data karyawan.");
   }
 }

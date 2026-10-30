@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { NextRequest, NextResponse, connection } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { triggerChatEvent } from "@/lib/pusher";
 
 export async function DELETE(
@@ -10,14 +9,8 @@ export async function DELETE(
 ) {
   await connection();
 
-  const user = await getSession();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return NextResponse.json({ error: "Hanya Admin yang dapat menghapus sesi" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const { id } = await params;
 

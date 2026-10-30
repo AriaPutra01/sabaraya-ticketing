@@ -126,3 +126,101 @@ export async function assignTicketRoundRobin(
     assignee: validCandidate,
   };
 }
+
+export interface AutoAssignOptions {
+  minutes?: number;
+  forceAll?: boolean;
+}
+
+export interface AutoAssignSummary {
+  totalPending: number;
+  assignedCount: number;
+  message: string;
+  details: Array<{
+    ticketId: string;
+    code: string;
+    assigned: boolean;
+    assigneeName?: string;
+    reason?: string;
+  }>;
+}
+
+/**
+ * Memeriksa dan menugaskan tiket PENDING yang terabaikan secara otomatis
+ * Dipakai bersama oleh route admin dan route Vercel Cron.
+ */
+export async function autoAssignPendingTickets(
+  options: AutoAssignOptions = {}
+): Promise<AutoAssignSummary> {
+  const { minutes = 30, forceAll = false } = options;
+  const thresholdTime = new Date(Date.now() - minutes * 60 * 1000);
+
+  const whereClause: any = {
+    status: TicketStatus.PENDING,
+  };
+  if (!forceAll) {
+    whereClause.createdAt = { lte: thresholdTime };
+  }
+
+  const pendingTickets = await prisma.ticket.findMany({
+    where: whereClause,
+    include: {
+      activities: {
+        where: { action: "REJECTED" },
+        select: { actorId: true },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (pendingTickets.length === 0) {
+    return {
+      totalPending: 0,
+      assignedCount: 0,
+      message: forceAll
+        ? "Tidak ada tiket berstatus PENDING saat ini."
+        : `Tidak ada tiket PENDING yang terabaikan lebih dari ${minutes} menit.`,
+      details: [],
+    };
+  }
+
+  let assignedCount = 0;
+  const details: AutoAssignSummary["details"] = [];
+
+  for (const ticket of pendingTickets) {
+    const rejectedUserIds = ticket.activities
+      .map((a) => a.actorId)
+      .filter(Boolean) as string[];
+
+    const result = await assignTicketRoundRobin(
+      ticket.id,
+      ticket.division,
+      ticket.regionId,
+      rejectedUserIds
+    );
+
+    if (result.assigned) {
+      assignedCount++;
+      details.push({
+        ticketId: ticket.id,
+        code: ticket.code,
+        assigned: true,
+        assigneeName: result.assignee?.name,
+      });
+    } else {
+      details.push({
+        ticketId: ticket.id,
+        code: ticket.code,
+        assigned: false,
+        reason: result.reason,
+      });
+    }
+  }
+
+  return {
+    totalPending: pendingTickets.length,
+    assignedCount,
+    message: `Berhasil menugaskan ${assignedCount} dari ${pendingTickets.length} tiket pending.`,
+    details,
+  };
+}

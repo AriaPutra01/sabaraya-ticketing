@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { prisma } from "./prisma";
 import crypto from "crypto";
 
@@ -177,4 +178,34 @@ export async function getSession(): Promise<TokenPayload | null> {
     division: user.division,
     name: user.name,
   };
+}
+
+export async function requireAuth(
+  allowedRoles?: Array<"SUPERADMIN" | "ADMIN" | "EMPLOYEE">
+): Promise<{
+  session: TokenPayload | null;
+  errorResponse: NextResponse | null;
+}> {
+  const session = await getSession();
+  if (!session) {
+    return {
+      session: null,
+      errorResponse: NextResponse.json(
+        { success: false, message: "Unauthorized: Silakan login terlebih dahulu." },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(session.role)) {
+    return {
+      session: null,
+      errorResponse: NextResponse.json(
+        { success: false, message: "Akses ditolak: Anda tidak memiliki izin untuk tindakan ini." },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { session, errorResponse: null };
 }

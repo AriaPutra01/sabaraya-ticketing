@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { NextRequest, NextResponse, connection } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { chunkText, generateEmbedding } from "@/lib/ai";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 
 export async function GET() {
   await connection();
 
-  const user = await getSession();
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const documents = await prisma.knowledgeDocument.findMany({
     include: {
@@ -27,22 +25,19 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   await connection();
 
-  const user = await getSession();
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const { title, category, content } = await req.json();
 
     if (!title || !content) {
-      return NextResponse.json({ error: "Judul dan isi dokumen wajib diisi" }, { status: 400 });
+      return apiError("Judul dan isi dokumen wajib diisi", 400);
     }
 
     const chunks = chunkText(content);
     const chunkEmbeddings: (number[] | null)[] = [];
 
-    // Hitung seluruh embedding di memori terlebih dahulu agar transaksi DB atomik
     if (process.env.OPENROUTER_API_KEY) {
       for (const chunk of chunks) {
         const emb = await generateEmbedding(chunk);
@@ -54,68 +49,67 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Simpan dokumen dan seluruh chunk vektor dalam satu transaksi database atomik
     const doc = await prisma.$transaction(async (tx) => {
       const createdDoc = await tx.knowledgeDocument.create({
         data: {
-          title: title.trim(),
-          category: category?.trim() || "FAQ",
-          content: content.trim(),
+          title,
+          category: category || "Umum",
+          content,
         },
       });
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        const emb = chunkEmbeddings[i];
-        const chunkRecord = await tx.knowledgeChunk.create({
-          data: {
-            documentId: createdDoc.id,
-            content: chunk,
-          },
-        });
+        const embedding = chunkEmbeddings[i];
 
-        if (emb) {
-          const vectorStr = `[${emb.join(",")}]`;
+        if (embedding) {
+          const vectorStr = `[${embedding.join(",")}]`;
           await tx.$executeRaw`
-            UPDATE knowledge_chunks
-            SET embedding = ${vectorStr}::vector
-            WHERE id = ${chunkRecord.id};
+            INSERT INTO "knowledge_chunks" ("id", "documentId", "content", "embedding", "createdAt")
+            VALUES (gen_random_uuid()::text, ${createdDoc.id}, ${chunk}, ${vectorStr}::vector, NOW());
           `;
+        } else {
+          await tx.knowledgeChunk.create({
+            data: {
+              documentId: createdDoc.id,
+              content: chunk,
+            },
+          });
         }
       }
 
       return createdDoc;
     });
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       document: doc,
       totalChunks: chunks.length,
     });
   } catch (error) {
-    console.error("Create knowledge document error:", error);
-    return NextResponse.json({ error: "Gagal menyimpan dokumen pengetahuan" }, { status: 500 });
+    return handleRouteError(error, "Gagal menyimpan dokumen pengetahuan");
   }
 }
 
 export async function DELETE(req: NextRequest) {
   await connection();
 
-  const user = await getSession();
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
   if (!id) {
-    return NextResponse.json({ error: "ID dokumen diperlukan" }, { status: 400 });
+    return apiError("ID dokumen diperlukan", 400);
   }
 
-  await prisma.knowledgeDocument.delete({
-    where: { id },
-  });
+  try {
+    await prisma.knowledgeDocument.delete({
+      where: { id },
+    });
 
-  return NextResponse.json({ success: true });
+    return apiSuccess(undefined, "Dokumen pengetahuan berhasil dihapus.");
+  } catch (error) {
+    return handleRouteError(error, "Gagal menghapus dokumen pengetahuan.");
+  }
 }

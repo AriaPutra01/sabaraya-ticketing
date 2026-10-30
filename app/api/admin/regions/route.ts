@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 import { z } from "zod";
 
 const createRegionSchema = z.object({
@@ -9,10 +10,8 @@ const createRegionSchema = z.object({
 });
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const regions = await prisma.region.findMany({
@@ -24,18 +23,15 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ success: true, data: regions });
+    return apiSuccess(regions);
   } catch (error) {
-    console.error("Failed to fetch regions:", error);
-    return NextResponse.json({ success: false, message: "Gagal mengambil data daerah." }, { status: 500 });
+    return handleRouteError(error, "Gagal mengambil data daerah.");
   }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   try {
     const body = await req.json();
@@ -45,7 +41,7 @@ export async function POST(req: NextRequest) {
       where: { name: data.name },
     });
     if (existing) {
-      return NextResponse.json({ success: false, message: "Nama daerah sudah ada." }, { status: 400 });
+      return apiError("Nama daerah sudah ada.", 400);
     }
 
     const region = await prisma.region.create({
@@ -55,12 +51,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, message: "Daerah berhasil ditambahkan.", data: region });
+    return apiSuccess(region, "Daerah berhasil ditambahkan.", 201);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, message: error.issues[0]?.message || "Input tidak valid" }, { status: 400 });
-    }
-    console.error("Failed to create region:", error);
-    return NextResponse.json({ success: false, message: "Gagal menambahkan daerah." }, { status: 500 });
+    return handleRouteError(error, "Gagal menambahkan daerah.");
   }
 }

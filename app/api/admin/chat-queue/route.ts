@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { NextRequest, NextResponse, connection } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { ChatSessionStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   await connection();
 
-  const user = await getSession();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
 
   const url = new URL(req.url);
   const rawStatus = url.searchParams.get("status");
@@ -21,7 +18,6 @@ export async function GET(req: NextRequest) {
   } else if (rawStatus && Object.values(ChatSessionStatus).includes(rawStatus as ChatSessionStatus)) {
     whereClause = { status: rawStatus as ChatSessionStatus };
   } else {
-    // Default queue: hanya yang perlu interaksi staf
     whereClause = {
       status: {
         in: ["WAITING_FOR_AGENT", "AGENT_ACTIVE"],
@@ -47,11 +43,11 @@ export async function GET(req: NextRequest) {
       },
       messages: {
         orderBy: { createdAt: "desc" },
-        take: 1, // Ambil pesan terakhir untuk preview
+        take: 1,
       },
     },
     orderBy: [
-      { status: "asc" }, // WAITING_FOR_AGENT lalu AGENT_ACTIVE
+      { status: "asc" },
       { updatedAt: "desc" },
     ],
     take: 30,

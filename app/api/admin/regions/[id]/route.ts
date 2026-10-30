@@ -1,15 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess, apiError, handleRouteError } from "@/lib/api-response";
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const { id } = await params;
 
@@ -25,21 +24,18 @@ export async function PUT(
       data: updateData,
     });
 
-    return NextResponse.json({ success: true, message: "Daerah berhasil diperbarui.", data: updated });
+    return apiSuccess(updated, "Daerah berhasil diperbarui.");
   } catch (error) {
-    console.error("Failed to update region:", error);
-    return NextResponse.json({ success: false, message: "Gagal memperbarui daerah." }, { status: 500 });
+    return handleRouteError(error, "Gagal memperbarui daerah.");
   }
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
-  }
+  const { errorResponse } = await requireAuth(["ADMIN", "SUPERADMIN"]);
+  if (errorResponse) return errorResponse;
 
   const { id } = await params;
 
@@ -49,12 +45,9 @@ export async function DELETE(
     });
 
     if (ticketCount > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Daerah ini memiliki ${ticketCount} riwayat tiket. Gunakan opsi 'Nonaktifkan' untuk menghentikan penugasan baru tanpa merusak data tiket.`,
-        },
-        { status: 400 }
+      return apiError(
+        `Daerah ini memiliki ${ticketCount} riwayat tiket. Gunakan opsi 'Nonaktifkan' untuk menghentikan penugasan baru tanpa merusak data tiket.`,
+        400
       );
     }
 
@@ -62,9 +55,8 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ success: true, message: "Daerah berhasil dihapus permanen." });
+    return apiSuccess(undefined, "Daerah berhasil dihapus permanen.");
   } catch (error) {
-    console.error("Failed to delete region:", error);
-    return NextResponse.json({ success: false, message: "Gagal menghapus daerah." }, { status: 500 });
+    return handleRouteError(error, "Gagal menghapus daerah.");
   }
 }
