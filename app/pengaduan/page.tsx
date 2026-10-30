@@ -1,263 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Wrench, Monitor, MapPin, Building2, AlertCircle, CheckCircle2, Copy, X } from "lucide-react";
-
-interface RegionItem {
-  id: string;
-  name: string;
-  coverage: string;
-}
+import { usePengaduan } from "@/hooks/usePengaduan";
+import { PengaduanSuccess } from "@/components/pengaduan/PengaduanSuccess";
+import { Wrench, Monitor, MapPin, Building2, AlertCircle, X } from "lucide-react";
 
 export default function PengaduanPage() {
-  const router = useRouter();
-  const [regions, setRegions] = useState<RegionItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [successData, setSuccessData] = useState<{ code: string; assigned: boolean; assigneeName: string | null } | null>(null);
-
-  const [formData, setFormData] = useState({
-    division: "TEKNISI",
-    regionId: "",
-    institutionName: "",
-    reporterName: "",
-    reporterPhone: "",
-    reporterAddress: "",
-    deviceBrand: "",
-    serialNumber: "",
-    title: "",
-    description: "",
-    priority: "MEDIUM",
-  });
-
-  useEffect(() => {
-    fetch("/api/regions")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data.length > 0) {
-          setRegions(res.data);
-          setFormData((prev) => ({ ...prev, regionId: res.data[0].id }));
-        }
-      })
-      .catch(() => toast.error("Gagal memuat daftar wilayah."));
-  }, []);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    if (selectedFiles.length === 0) return;
-
-    // Validasi batas maksimal 3 foto
-    if (photoUrls.length + selectedFiles.length > 3) {
-      toast.error(`Maksimal 3 foto. Anda sudah mengunggah ${photoUrls.length} foto.`);
-      e.target.value = "";
-      return;
-    }
-
-    // Validasi ukuran & tipe file
-    for (const file of selectedFiles) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`Foto "${file.name}" melebihi batas 5MB.`);
-        e.target.value = "";
-        return;
-      }
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast.error(`Format berkas "${file.name}" tidak didukung. Gunakan JPG, PNG, atau WEBP.`);
-        e.target.value = "";
-        return;
-      }
-    }
-
-    setUploading(true);
-    const toastId = toast.loading(`Menyiapkan unggah ${selectedFiles.length} foto ke Cloudflare R2...`);
-
-    try {
-      // 1. Minta Presigned URL dari backend
-      const presignRes = await fetch("/api/upload/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          files: selectedFiles.map((f) => ({
-            fileName: f.name,
-            fileType: f.type,
-            fileSize: f.size,
-          })),
-        }),
-      });
-
-      const presignData = await presignRes.json();
-
-      if (presignRes.ok && presignData.success && presignData.items) {
-        // 2. Upload langsung (Direct PUT) ke Cloudflare R2 secara paralel
-        const uploadPromises = selectedFiles.map(async (file, i) => {
-          const item = presignData.items[i];
-          const uploadRes = await fetch(item.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file,
-          });
-
-          if (!uploadRes.ok) {
-            throw new Error(`Gagal mengunggah foto "${file.name}" ke Cloudflare R2.`);
-          }
-          return item.publicUrl as string;
-        });
-
-        const uploadedUrls = await Promise.all(uploadPromises);
-
-        setPhotoUrls((prev) => [...prev, ...uploadedUrls]);
-        toast.success(`${uploadedUrls.length} foto berhasil diunggah ke R2 storage!`, { id: toastId });
-      } else {
-        // Fallback jika kredensial R2 belum diisi (misal saat dev)
-        toast.info("Mengunggah foto mode lokal...", { id: toastId });
-        const fallbackUrls: string[] = [];
-        for (const file of selectedFiles) {
-          const body = new FormData();
-          body.append("file", file);
-          const res = await fetch("/api/upload", { method: "POST", body });
-          const data = await res.json();
-          if (data.success && data.url) {
-            fallbackUrls.push(data.url);
-          }
-        }
-        setPhotoUrls((prev) => [...prev, ...fallbackUrls]);
-        toast.success(`${fallbackUrls.length} foto berhasil dilampirkan.`, { id: toastId });
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Gagal mengunggah foto.", { id: toastId });
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleRemovePhoto = (indexToRemove: number) => {
-    setPhotoUrls((prev) => prev.filter((_, idx) => idx !== indexToRemove));
-    toast.info("Foto dihapus dari daftar lampiran.");
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          photoUrls,
-          photoUrl: photoUrls[0] || null,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        toast.error(data.message || "Gagal mengirimkan pengaduan.");
-        setLoading(false);
-        return;
-      }
-
-      setSuccessData(data.data);
-      toast.success("Pengaduan berhasil diajukan!");
-    } catch {
-      toast.error("Terjadi kesalahan jaringan.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success("Kode tiket berhasil disalin!");
-  };
+  const {
+    regions,
+    loading,
+    uploading,
+    photoUrls,
+    successData,
+    formData,
+    setFormData,
+    handleFileUpload,
+    handleRemovePhoto,
+    handleSubmit,
+    handleReset,
+  } = usePengaduan();
 
   if (successData) {
-    return (
-      <div className="max-w-xl mx-auto py-10 px-4">
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Pengaduan Berhasil Diterima</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Simpan kode tiket berikut untuk memantau status pengerjaan secara berkala.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-            <span className="font-mono text-xl font-bold tracking-wider text-ssm-blue">
-              {successData.code}
-            </span>
-            <button
-              onClick={() => copyCode(successData.code)}
-              className="p-2 text-slate-600 hover:text-ssm-blue hover:bg-slate-200 rounded-lg transition"
-              title="Salin Kode"
-            >
-              <Copy className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="p-4 rounded-xl bg-ssm-blue-light/60 border border-ssm-blue/20 text-left text-xs text-slate-800 space-y-1">
-            <p className="font-semibold text-ssm-blue">Status Penugasan:</p>
-            <p className="text-amber-800 font-medium">
-              ⏳ Berhasil terdaftar (Menunggu Penugasan). Tim operasional sedang meninjau dan menugaskan staf siaga terdekat.
-            </p>
-            <p className="text-slate-500 pt-1">
-              Tiket ini juga telah disimpan otomatis di browser Anda pada menu Lacak Tiket.
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push(`/lacak?code=${successData.code}`)}
-              className="flex-1 py-3 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white font-semibold text-sm transition"
-            >
-              Lacak Tiket Sekarang
-            </button>
-            <button
-              onClick={() => {
-                setSuccessData(null);
-                setPhotoUrls([]);
-                setFormData({
-                  division: "TEKNISI",
-                  regionId: regions[0]?.id || "",
-                  institutionName: "",
-                  reporterName: "",
-                  reporterPhone: "",
-                  reporterAddress: "",
-                  deviceBrand: "",
-                  serialNumber: "",
-                  title: "",
-                  description: "",
-                  priority: "MEDIUM",
-                });
-              }}
-              className="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition"
-            >
-              Buat Baru
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <PengaduanSuccess code={successData.code} onReset={handleReset} />;
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Formulir Pengaduan Layanan</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          Formulir Pengaduan Layanan
+        </h1>
         <p className="mt-1 text-sm text-slate-600">
           Silakan isi detail kendala Anda. Sistem kami akan meneruskan tiket secara otomatis ke staf yang sedang bertugas di wilayah Anda.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-8">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-8"
+      >
         {/* 1. Pilih Divisi */}
         <div>
           <label className="block text-sm font-bold text-slate-900 mb-3">
@@ -266,14 +46,18 @@ export default function PengaduanPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, division: "TEKNISI" })}
+              onClick={() => setFormData((prev) => ({ ...prev, division: "TEKNISI" }))}
               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition ${
                 formData.division === "TEKNISI"
                   ? "border-ssm-blue bg-ssm-blue-light/60 ring-2 ring-ssm-blue/20 text-ssm-blue"
                   : "border-slate-200 hover:border-slate-300 text-slate-700"
               }`}
             >
-              <div className={`p-2.5 rounded-xl ${formData.division === "TEKNISI" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"}`}>
+              <div
+                className={`p-2.5 rounded-xl ${
+                  formData.division === "TEKNISI" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
                 <Wrench className="w-5 h-5" />
               </div>
               <div>
@@ -284,14 +68,18 @@ export default function PengaduanPage() {
 
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, division: "IT" })}
+              onClick={() => setFormData((prev) => ({ ...prev, division: "IT" }))}
               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition ${
                 formData.division === "IT"
                   ? "border-ssm-blue bg-ssm-blue-light/60 ring-2 ring-ssm-blue/20 text-ssm-blue"
                   : "border-slate-200 hover:border-slate-300 text-slate-700"
               }`}
             >
-              <div className={`p-2.5 rounded-xl ${formData.division === "IT" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"}`}>
+              <div
+                className={`p-2.5 rounded-xl ${
+                  formData.division === "IT" ? "bg-ssm-blue text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
                 <Monitor className="w-5 h-5" />
               </div>
               <div>
@@ -304,7 +92,7 @@ export default function PengaduanPage() {
 
         {/* 2. Pilih Daerah */}
         <div>
-          <label className="block text-sm font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
+          <label className="text-sm font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-ssm-blue" />
             2. Wilayah / Daerah Instansi Anda
           </label>
@@ -314,7 +102,7 @@ export default function PengaduanPage() {
 
           <select
             value={formData.regionId}
-            onChange={(e) => setFormData({ ...formData, regionId: e.target.value })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, regionId: e.target.value }))}
             required
             className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue focus:border-transparent"
           >
@@ -335,7 +123,7 @@ export default function PengaduanPage() {
 
         {/* 3. Identitas Pengadu */}
         <div className="space-y-4 pt-2 border-t border-slate-100">
-          <label className="block text-sm font-bold text-slate-900 flex items-center gap-1.5">
+          <label className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
             <Building2 className="w-4 h-4 text-ssm-blue" />
             3. Identitas Instansi & Kontak
           </label>
@@ -350,7 +138,7 @@ export default function PengaduanPage() {
                 required
                 placeholder="Contoh: RSUD Cibabat / Lab Pramita"
                 value={formData.institutionName}
-                onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, institutionName: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -364,7 +152,7 @@ export default function PengaduanPage() {
                 required
                 placeholder="Nama Anda"
                 value={formData.reporterName}
-                onChange={(e) => setFormData({ ...formData, reporterName: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, reporterName: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -378,7 +166,7 @@ export default function PengaduanPage() {
                 required
                 placeholder="08123456789"
                 value={formData.reporterPhone}
-                onChange={(e) => setFormData({ ...formData, reporterPhone: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, reporterPhone: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -391,7 +179,7 @@ export default function PengaduanPage() {
                 type="text"
                 placeholder="Jl. Raya Barat No. 123, Cimahi"
                 value={formData.reporterAddress}
-                onChange={(e) => setFormData({ ...formData, reporterAddress: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, reporterAddress: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -400,7 +188,7 @@ export default function PengaduanPage() {
 
         {/* 4. Rincian Perangkat & Keluhan */}
         <div className="space-y-4 pt-2 border-t border-slate-100">
-          <label className="block text-sm font-bold text-slate-900 flex items-center gap-1.5">
+          <label className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4 text-ssm-blue" />
             4. Detail Perangkat & Permasalahan
           </label>
@@ -414,7 +202,7 @@ export default function PengaduanPage() {
                 type="text"
                 placeholder="Contoh: Mindray BC-3000 / Server LIS"
                 value={formData.deviceBrand}
-                onChange={(e) => setFormData({ ...formData, deviceBrand: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, deviceBrand: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -427,7 +215,7 @@ export default function PengaduanPage() {
                 type="text"
                 placeholder="Contoh: SN-BC3000-8812"
                 value={formData.serialNumber}
-                onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, serialNumber: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               />
             </div>
@@ -442,7 +230,7 @@ export default function PengaduanPage() {
               required
               placeholder="Contoh: Alat tiba-tiba mati total saat running sampel"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
             />
           </div>
@@ -456,7 +244,7 @@ export default function PengaduanPage() {
               rows={4}
               placeholder="Jelaskan secara rinci kronologi kejadian, pesan error yang muncul, atau tindakan awal yang sudah dilakukan..."
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
             />
           </div>
@@ -468,7 +256,7 @@ export default function PengaduanPage() {
               </label>
               <select
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
                 className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ssm-blue"
               >
                 <option value="LOW">Rendah (Pertanyaan umum / konsultasi)</option>
@@ -478,7 +266,7 @@ export default function PengaduanPage() {
               </select>
             </div>
 
-            {/* Unggah Foto / Bukti Multiple (Maks 3) ke Cloudflare R2 */}
+            {/* Unggah Foto / Bukti Multiple (Maks 3) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-semibold text-slate-700">
@@ -516,7 +304,10 @@ export default function PengaduanPage() {
               {photoUrls.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                   {photoUrls.map((url, index) => (
-                    <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100">
+                    <div
+                      key={index}
+                      className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100"
+                    >
                       <img
                         src={url}
                         alt={`Lampiran ${index + 1}`}
