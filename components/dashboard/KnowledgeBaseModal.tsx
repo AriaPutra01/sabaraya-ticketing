@@ -139,10 +139,10 @@ export function KnowledgeBaseModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* Content Responsif */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
           {/* Kolom Kiri: Form Input Dokumen Baru */}
-          <div className="w-1/2 p-5 border-r border-slate-200 overflow-y-auto bg-slate-50">
+          <div className="w-full md:w-1/2 p-4 sm:p-5 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto bg-slate-50 shrink-0">
             <h3 className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5">
               <Plus className="w-4 h-4 text-ssm-blue" />
               <span>Tambah Dokumen Baru</span>
@@ -214,7 +214,7 @@ export function KnowledgeBaseModal({
           </div>
 
           {/* Kolom Kanan: Daftar Dokumen yang Tersimpan */}
-          <div className="w-1/2 p-5 overflow-y-auto bg-white flex flex-col">
+          <div className="w-full md:w-1/2 p-4 sm:p-5 overflow-y-auto bg-white flex flex-col flex-1">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-sm text-slate-900">
                 Dokumen Tersimpan ({documents.length})

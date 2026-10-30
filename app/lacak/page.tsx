@@ -123,7 +123,7 @@ function TrackContent() {
               </div>
               <p className="text-sm font-semibold text-slate-800 mt-1">{activeTicket.title}</p>
             </div>
-            <div className="text-right text-xs text-slate-500">
+            <div className="text-left sm:text-right text-xs text-slate-500">
               <p>Diajukan pada:</p>
               <p className="font-medium text-slate-700">
                 {format(new Date(activeTicket.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })} WIB
@@ -170,7 +170,7 @@ function TrackContent() {
           {(activeTicket.photoUrls?.length > 0 || activeTicket.photoUrl) && (
             <div className="space-y-2">
               <p className="text-xs font-bold text-slate-700">Lampiran Foto Bukti Kendala:</p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {(activeTicket.photoUrls?.length > 0 ? activeTicket.photoUrls : [activeTicket.photoUrl]).map((url: string, idx: number) => (
                   <a
                     key={idx}

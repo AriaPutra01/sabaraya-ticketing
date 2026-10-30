@@ -90,12 +90,12 @@ export function ConfirmModal({
             </button>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-2.5">
+          <div className="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition disabled:opacity-50 text-center"
             >
               {cancelText}
             </button>
@@ -103,7 +103,7 @@ export function ConfirmModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 ${currentVariant.btn}`}
+              className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 ${currentVariant.btn}`}
             >
               {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
               <span>{confirmText}</span>

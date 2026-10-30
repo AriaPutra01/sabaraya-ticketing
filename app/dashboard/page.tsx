@@ -514,25 +514,25 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Top Banner / User Profile */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-ssm-blue text-white flex items-center justify-center font-bold text-lg shadow-sm">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-ssm-blue text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-sm shrink-0">
             {user.name.charAt(0)}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-slate-900">{user.name}</h1>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">{user.name}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-ssm-blue-light text-ssm-blue">
                 {user.role} {user.division ? `• ${user.division}` : ""}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">{user.email} • {user.phone || "No HP belum diisi"}</p>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">{user.email} • {user.phone || "No HP belum diisi"}</p>
           </div>
         </div>
 
         <button
           onClick={handleLogout}
-          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-xs font-bold transition flex items-center gap-1.5"
+          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-xs font-bold transition flex items-center justify-center gap-1.5"
         >
           <LogOut className="w-4 h-4" />
           Keluar
@@ -540,16 +540,16 @@ export default function DashboardPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab("tickets")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap shrink-0 ${
             activeTab === "tickets"
               ? "bg-ssm-blue text-white shadow-sm"
               : "bg-white text-slate-600 hover:bg-slate-100"
           }`}
         >
-          <Ticket className="w-4 h-4" />
+          <Ticket className="w-4 h-4 shrink-0" />
           {user.role === "EMPLOYEE" ? "Tiket Tugas Saya" : "Manajemen Tiket"}
         </button>
 
@@ -557,25 +557,25 @@ export default function DashboardPage() {
           <>
             <button
               onClick={() => setActiveTab("schedules")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap shrink-0 ${
                 activeTab === "schedules"
                   ? "bg-ssm-blue text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 shrink-0" />
               Penjadwalan Siaga
             </button>
 
             <button
               onClick={() => setActiveTab("regions")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap shrink-0 ${
                 activeTab === "regions"
                   ? "bg-ssm-blue text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <MapPin className="w-4 h-4" />
+              <MapPin className="w-4 h-4 shrink-0" />
               Master Daerah & Cakupan
             </button>
           </>
@@ -584,38 +584,38 @@ export default function DashboardPage() {
         {user.role === "SUPERADMIN" && (
           <button
             onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap shrink-0 ${
               activeTab === "users"
                 ? "bg-ssm-blue text-white shadow-sm"
                 : "bg-white text-slate-600 hover:bg-slate-100"
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 shrink-0" />
             Kelola Pengguna
           </button>
         )}
 
         <button
           onClick={() => setLiveChatModalOpen(true)}
-          className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition"
+          className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition whitespace-nowrap shrink-0"
         >
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>Antrean Live CS</span>
         </button>
 
         {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
           <button
             onClick={() => setKnowledgeModalOpen(true)}
-            className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-ssm-blue-light/60 hover:bg-ssm-blue-light text-ssm-blue border border-ssm-blue/20 transition"
+            className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-ssm-blue-light/60 hover:bg-ssm-blue-light text-ssm-blue border border-ssm-blue/20 transition whitespace-nowrap shrink-0"
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-4 h-4 shrink-0" />
             <span>Basis Pengetahuan AI</span>
           </button>
         )}
 
         <button
           onClick={loadData}
-          className="ml-auto p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 transition"
+          className="ml-auto p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 transition shrink-0"
           title="Segarkan Data"
         >
           <RefreshCw className="w-4 h-4" />
@@ -642,7 +642,7 @@ export default function DashboardPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                className="flex-1 sm:flex-initial px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
               >
                 <option value="ALL">Semua Status</option>
                 <option value="PENDING">PENDING</option>
@@ -655,7 +655,7 @@ export default function DashboardPage() {
               <select
                 value={divisionFilter}
                 onChange={(e) => setDivisionFilter(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                className="flex-1 sm:flex-initial px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
               >
                 <option value="ALL">Semua Divisi</option>
                 <option value="TEKNISI">TEKNISI</option>
@@ -664,7 +664,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-slate-800">
               Daftar Tiket ({tickets.length} Tiket Ditemukan)
             </h2>
@@ -673,25 +673,38 @@ export default function DashboardPage() {
               <button
                 onClick={handleTriggerAutoAssign}
                 disabled={runningAutoAssign}
-                className="px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-50 shadow-sm"
+                className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition disabled:opacity-50 shadow-sm"
                 title="Tugaskan otomatis tiket pending yang belum di-assign lebih dari 30 menit"
               >
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                {runningAutoAssign ? "Memproses..." : "⚡ Jalankan Auto-Assign (>30 Mnt)"}
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>{runningAutoAssign ? "Memproses..." : "⚡ Jalankan Auto-Assign (>30 Mnt)"}</span>
               </button>
             )}
           </div>
 
           {tickets.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-white border border-slate-200 text-center text-slate-500 text-sm">
-              Tidak ada tiket yang cocok dengan filter atau pencarian.
+            <div className="p-8 sm:p-10 rounded-2xl bg-white border border-slate-200 text-center space-y-3">
+              <p className="text-slate-500 text-sm">Tidak ada tiket yang cocok dengan filter atau pencarian.</p>
+              {(searchQuery || statusFilter !== "ALL" || divisionFilter !== "ALL") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("ALL");
+                    setDivisionFilter("ALL");
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                >
+                  Reset Filter
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid gap-3">
               {tickets.map((t) => (
-                <div key={t.id} className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 hover:border-slate-300 transition">
+                <div key={t.id} className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3.5 sm:space-y-4 hover:border-slate-300 transition">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                       <span className="font-mono text-sm font-bold text-ssm-blue">{t.code}</span>
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
                         {t.division}
@@ -705,7 +718,11 @@ export default function DashboardPage() {
                       }`}>
                         {t.status}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-500 border border-slate-200">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
+                        t.priority === "CRITICAL"
+                          ? "bg-rose-50 text-rose-700 border border-rose-200 font-bold"
+                          : "bg-slate-50 text-slate-500 border border-slate-200"
+                      }`}>
                         Urgensi: {t.priority}
                       </span>
                     </div>
@@ -871,7 +888,7 @@ export default function DashboardPage() {
             {schedules.map((s) => (
               <div key={s.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="font-bold text-sm text-slate-900">{s.user.name}</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ssm-blue-light text-ssm-blue">
                       {s.user.division}
@@ -884,7 +901,7 @@ export default function DashboardPage() {
                     Cakupan: {s.region.coverage}
                   </p>
                   <p className="text-xs text-slate-700 mt-1 font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-ssm-blue" />
+                    <Clock className="w-3.5 h-3.5 text-ssm-blue shrink-0" />
                     {format(new Date(s.startTime), "dd MMM yyyy, HH:mm", { locale: localeId })} s/d{" "}
                     {format(new Date(s.endTime), "dd MMM yyyy, HH:mm", { locale: localeId })}
                   </p>
@@ -893,7 +910,7 @@ export default function DashboardPage() {
 
                 <button
                   onClick={() => handleDeleteSchedule(s.id)}
-                  className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition text-center"
                 >
                   Hapus
                 </button>
@@ -921,7 +938,7 @@ export default function DashboardPage() {
             {regions.map((r) => (
               <div key={r.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <h3 className="font-bold text-sm text-slate-900">{r.name}</h3>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.isActive ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
                       {r.isActive ? "Aktif" : "Nonaktif"}
@@ -937,7 +954,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end sm:justify-start">
                   <button
                     onClick={() => setRegionModal({ open: true, isEdit: true, id: r.id, name: r.name, coverage: r.coverage })}
                     className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
@@ -985,7 +1002,7 @@ export default function DashboardPage() {
             {usersList.map((u) => (
               <div key={u.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="font-bold text-sm text-slate-900">{u.name}</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800">
                       {u.role}
@@ -1002,7 +1019,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-slate-500 mt-1">{u.email} • Telp: {u.phone || "-"}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end sm:justify-start">
                   <button
                     onClick={() => setUserModal({
                       open: true,
@@ -1047,12 +1064,12 @@ export default function DashboardPage() {
 
       {/* MODAL DETAIL TIKET LENGKAP */}
       {detailModal.open && detailModal.ticket && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 max-w-2xl w-full space-y-5 sm:space-y-6 shadow-2xl my-4 sm:my-8 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100 gap-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xl font-bold text-ssm-blue">{detailModal.ticket.code}</span>
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="font-mono text-lg sm:text-xl font-bold text-ssm-blue">{detailModal.ticket.code}</span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-ssm-blue-light text-ssm-blue">
                     {detailModal.ticket.division}
                   </span>
@@ -1060,11 +1077,11 @@ export default function DashboardPage() {
                     {detailModal.ticket.status}
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 mt-1">{detailModal.ticket.title}</h3>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-1">{detailModal.ticket.title}</h3>
               </div>
               <button
                 onClick={() => setDetailModal({ open: false, ticket: null })}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg shrink-0"
               >
                 ✕
               </button>
@@ -1080,7 +1097,7 @@ export default function DashboardPage() {
               {(detailModal.ticket.photoUrls?.length > 0 || detailModal.ticket.photoUrl) && (
                 <div className="pt-2 space-y-1.5">
                   <p className="text-xs font-bold text-slate-700">Lampiran Bukti Foto ({detailModal.ticket.photoUrls?.length || 1} Foto):</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {(detailModal.ticket.photoUrls?.length > 0 ? detailModal.ticket.photoUrls : [detailModal.ticket.photoUrl]).map((url: string, idx: number) => (
                       <a
                         key={idx}
@@ -1131,8 +1148,15 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setDetailModal({ open: false, ticket: null })}
+                className="w-full sm:w-auto px-5 py-2.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold text-center"
+              >
+                Tutup Jendela
+              </button>
+
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {/* Employee Actions inside Modal */}
                 {user.role === "EMPLOYEE" && detailModal.ticket.assigneeId === user.id && (
                   <>
@@ -1140,14 +1164,14 @@ export default function DashboardPage() {
                       <>
                         <button
                           onClick={() => handleStartProgress(detailModal.ticket.id)}
-                          className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                          className="flex-1 sm:flex-initial px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition"
                         >
                           <CheckCircle className="w-3.5 h-3.5" />
                           Terima Tugas (Setuju)
                         </button>
                         <button
                           onClick={() => setRejectModal({ open: true, ticketId: detailModal.ticket.id, reason: "" })}
-                          className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition border border-rose-200"
+                          className="flex-1 sm:flex-initial px-4 py-2.5 sm:py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition border border-rose-200 flex items-center justify-center gap-1.5"
                         >
                           <XCircle className="w-3.5 h-3.5" />
                           Tolak Tugas
@@ -1158,7 +1182,7 @@ export default function DashboardPage() {
                     {detailModal.ticket.status === "IN_PROGRESS" && (
                       <button
                         onClick={() => setResolveModal({ open: true, ticketId: detailModal.ticket.id, note: "" })}
-                        className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         Selesaikan Tiket
@@ -1178,7 +1202,7 @@ export default function DashboardPage() {
                             .then((res) => res.success && setEmployees(res.data));
                           setAssignModal({ open: true, ticketId: detailModal.ticket.id, assigneeId: "" });
                         }}
-                        className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold transition flex items-center gap-1.5"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold transition flex items-center justify-center gap-1.5"
                       >
                         <User className="w-3.5 h-3.5" />
                         Tugaskan Petugas
@@ -1188,7 +1212,7 @@ export default function DashboardPage() {
                     {detailModal.ticket.status === "RESOLVED" && (
                       <button
                         onClick={() => handleCloseTicket(detailModal.ticket.id)}
-                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         Tutup Tiket Resmi
@@ -1197,13 +1221,6 @@ export default function DashboardPage() {
                   </>
                 )}
               </div>
-
-              <button
-                onClick={() => setDetailModal({ open: false, ticket: null })}
-                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
-              >
-                Tutup Jendela
-              </button>
             </div>
           </div>
         </div>
@@ -1211,10 +1228,10 @@ export default function DashboardPage() {
 
       {/* MODAL TOLAK TIKET (WAJIB ALASAN) */}
       {rejectModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex items-center gap-2 text-rose-600">
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
               <h3 className="font-bold text-base text-slate-900">Tolak Tiket Pengaduan</h3>
             </div>
             <p className="text-xs text-slate-600">
@@ -1235,18 +1252,18 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRejectModal({ open: false, ticketId: "", reason: "" })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleRejectTicket}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 text-center"
               >
                 Kirim Penolakan
               </button>
@@ -1257,11 +1274,11 @@ export default function DashboardPage() {
 
       {/* MODAL SELESAIKAN TIKET */}
       {resolveModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900 flex items-center gap-2 text-emerald-600">
-              <CheckCircle className="w-5 h-5" />
-              Selesaikan Tiket Pengaduan
+              <CheckCircle className="w-5 h-5 shrink-0" />
+              <span>Selesaikan Tiket Pengaduan</span>
             </h3>
             <p className="text-xs text-slate-600">
               Berikan rangkuman tindakan dan hasil penanganan yang telah dilakukan untuk catatan pengadu & sistem.
@@ -1281,18 +1298,18 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setResolveModal({ open: false, ticketId: "", note: "" })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleResolveTicket}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 text-center"
               >
                 Selesaikan Tiket
               </button>
@@ -1303,8 +1320,8 @@ export default function DashboardPage() {
 
       {/* MODAL MANUAL ASSIGN */}
       {assignModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900">Tugaskan Tiket Secara Manual</h3>
             <p className="text-xs text-slate-600">
               Pilih staf teknisi atau IT yang akan menangani tiket ini.
@@ -1326,18 +1343,18 @@ export default function DashboardPage() {
               </select>
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setAssignModal({ open: false, ticketId: "", assigneeId: "" })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleManualAssign}
-                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold text-center"
               >
                 Tugaskan
               </button>
@@ -1348,8 +1365,8 @@ export default function DashboardPage() {
 
       {/* MODAL TAMBAH JADWAL */}
       {scheduleModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleAddSchedule} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <form onSubmit={handleAddSchedule} className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900">Tambah Jadwal Siaga Karyawan</h3>
 
             <div>
@@ -1380,7 +1397,7 @@ export default function DashboardPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Mulai</label>
                 <input
@@ -1413,17 +1430,17 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setScheduleModal({ ...scheduleModal, open: false })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold text-center"
               >
                 Simpan Jadwal
               </button>
@@ -1434,8 +1451,8 @@ export default function DashboardPage() {
 
       {/* MODAL TAMBAH / UBAH DAERAH */}
       {regionModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleSaveRegion} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <form onSubmit={handleSaveRegion} className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900">
               {regionModal.isEdit ? "Ubah Data Daerah" : "Tambah Master Daerah Baru"}
             </h3>
@@ -1464,17 +1481,17 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRegionModal({ open: false, isEdit: false, name: "", coverage: "" })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold text-center"
               >
                 Simpan
               </button>
@@ -1485,8 +1502,8 @@ export default function DashboardPage() {
 
       {/* MODAL TAMBAH / UBAH PENGGUNA */}
       {userModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleSaveUser} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <form onSubmit={handleSaveUser} className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900">
               {userModal.isEdit ? "Ubah Data Pengguna" : "Tambah Akun Pengguna Baru"}
             </h3>
@@ -1531,7 +1548,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Peran (Role) *</label>
                 <select
@@ -1559,7 +1576,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp</label>
                 <input
@@ -1584,17 +1601,17 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setUserModal({ ...userModal, open: false })}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 text-center"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-ssm-blue hover:bg-ssm-blue-hover text-white text-xs font-bold text-center"
               >
                 {userModal.isEdit ? "Perbarui Pengguna" : "Buat Akun"}
               </button>

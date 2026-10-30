@@ -45,9 +45,9 @@ export function AuthNavButton() {
     return (
       <Link
         href="/dashboard"
-        className="ml-2 px-3.5 py-2 rounded-lg bg-ssm-blue hover:bg-ssm-blue-hover text-white flex items-center gap-1.5 shadow-xs transition"
+        className="ml-1 sm:ml-2 px-2.5 sm:px-3.5 py-2 rounded-lg bg-ssm-blue hover:bg-ssm-blue-hover text-white flex items-center gap-1.5 shadow-xs transition shrink-0"
       >
-        <LayoutDashboard className="w-4 h-4" />
+        <LayoutDashboard className="w-4 h-4 shrink-0" />
         <span>Dashboard</span>
       </Link>
     );
@@ -56,9 +56,9 @@ export function AuthNavButton() {
   return (
     <Link
       href="/masuk"
-      className="ml-2 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition"
+      className="ml-1 sm:ml-2 px-2.5 sm:px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition shrink-0"
     >
-      <LogIn className="w-4 h-4" />
+      <LogIn className="w-4 h-4 shrink-0" />
       <span>Portal Staf</span>
     </Link>
   );
@@ -68,9 +68,9 @@ export function AuthNavFallback() {
   return (
     <Link
       href="/masuk"
-      className="ml-2 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-sm transition"
+      className="ml-1 sm:ml-2 px-2.5 sm:px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-sm transition shrink-0"
     >
-      <LogIn className="w-4 h-4" />
+      <LogIn className="w-4 h-4 shrink-0" />
       <span>Portal Staf</span>
     </Link>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { MessageSquare, X, RefreshCw, Trash2, Ticket } from "lucide-react";
+import { MessageSquare, X, RefreshCw, Trash2, Ticket, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getPusherClient } from "@/lib/pusher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -252,10 +252,14 @@ export function LiveChatQueueModal({
           </button>
         </div>
 
-        {/* Konten 2 Kolom */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* Konten 2 Kolom Responsif */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Kolom Kiri: Daftar Antrean */}
-          <div className="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50">
+          <div
+            className={`w-full md:w-80 lg:w-96 border-r border-slate-200 flex-col bg-slate-50 ${
+              selectedSession ? "hidden md:flex" : "flex"
+            }`}
+          >
             {/* Filter Tab Antrean */}
             <div className="p-2 border-b border-slate-200 flex items-center gap-1.5 bg-white">
               <button
@@ -355,28 +359,42 @@ export function LiveChatQueueModal({
           </div>
 
           {/* Kolom Kanan: Detail Percakapan & Respon */}
-          <div className="flex-1 flex flex-col bg-white">
+          <div
+            className={`flex-1 flex-col bg-white ${
+              !selectedSession ? "hidden md:flex" : "flex"
+            }`}
+          >
             {selectedSession ? (
               <>
                 {/* Header Sesi Terpilih */}
-                <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-                  <div>
-                    {selectedSession.ticket && (
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-ssm-blue mb-0.5">
-                        <Ticket className="w-3.5 h-3.5" />
-                        <span>Tiket: {selectedSession.ticket.code} ({selectedSession.ticket.institutionName})</span>
-                      </div>
-                    )}
-                    <h3 className="font-bold text-sm text-slate-900">
-                      {selectedSession.userName || (selectedSession.ticket ? selectedSession.ticket.institutionName : "Pengadu Tamu")}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Status:{" "}
-                      <span className="font-medium text-slate-700">
-                        {selectedSession.status}
-                      </span>{" "}
-                      {selectedSession.assignedTo && `• Petugas: ${selectedSession.assignedTo.name}`}
-                    </p>
+                <div className="px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSession(null)}
+                      className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-200 shrink-0 transition"
+                      aria-label="Kembali ke antrean"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div className="min-w-0">
+                      {selectedSession.ticket && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-ssm-blue mb-0.5 truncate">
+                          <Ticket className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Tiket: {selectedSession.ticket.code} ({selectedSession.ticket.institutionName})</span>
+                        </div>
+                      )}
+                      <h3 className="font-bold text-sm text-slate-900 truncate">
+                        {selectedSession.userName || (selectedSession.ticket ? selectedSession.ticket.institutionName : "Pengadu Tamu")}
+                      </h3>
+                      <p className="text-xs text-slate-500 truncate">
+                        Status:{" "}
+                        <span className="font-medium text-slate-700">
+                          {selectedSession.status}
+                        </span>{" "}
+                        {selectedSession.assignedTo && `• Petugas: ${selectedSession.assignedTo.name}`}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {selectedSession.status === "WAITING_FOR_AGENT" && (

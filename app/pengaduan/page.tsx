@@ -263,7 +263,7 @@ export default function PengaduanPage() {
           <label className="block text-sm font-bold text-slate-900 mb-3">
             1. Pilih Divisi Tujuan
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, division: "TEKNISI" })}
@@ -514,7 +514,7 @@ export default function PengaduanPage() {
 
               {/* Grid Preview Foto */}
               {photoUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-3 mt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                   {photoUrls.map((url, index) => (
                     <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100">
                       <img

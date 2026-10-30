@@ -5,10 +5,10 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       {/* Hero Section - Clean Enterprise Medical Theme */}
-      <section className="text-center py-14 px-6 rounded-3xl bg-white border border-slate-200 shadow-xs relative overflow-hidden">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ssm-blue-light text-ssm-blue text-xs font-bold mb-6 border border-ssm-blue/20">
-          <ShieldCheck className="w-4 h-4 text-ssm-blue" />
-          Layanan Siaga Alat Laboratorium & IT Rumah Sakit
+      <section className="text-center py-12 sm:py-14 px-4 sm:px-6 rounded-3xl bg-white border border-slate-200 shadow-xs relative overflow-hidden">
+        <div className="inline-flex items-center justify-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-ssm-blue-light text-ssm-blue text-[11px] sm:text-xs font-bold mb-6 border border-ssm-blue/20 max-w-full leading-normal">
+          <ShieldCheck className="w-4 h-4 text-ssm-blue shrink-0" />
+          <span>Layanan Siaga Alat Laboratorium & IT Rumah Sakit</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
@@ -38,7 +38,7 @@ export default function HomePage() {
 
       {/* 2 Divisions Grid */}
       <section className="grid md:grid-cols-2 gap-6">
-        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
+        <div className="p-5 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
           <div className="w-12 h-12 rounded-xl bg-ssm-blue-light text-ssm-blue flex items-center justify-center mb-5 border border-ssm-blue/20">
             <Wrench className="w-6 h-6" />
           </div>
@@ -48,17 +48,17 @@ export default function HomePage() {
           </p>
           <ul className="mt-5 space-y-2.5 text-xs text-slate-600 font-medium">
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue shrink-0" />
               Penjadwalan siaga teknisi per zona wilayah
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue shrink-0" />
               Dukungan unit hematology, clinical chemistry, dan elektroda
             </li>
           </ul>
         </div>
 
-        <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
+        <div className="p-5 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-ssm-blue/40 transition">
           <div className="w-12 h-12 rounded-xl bg-ssm-blue-light text-ssm-blue flex items-center justify-center mb-5 border border-ssm-blue/20">
             <Monitor className="w-6 h-6" />
           </div>
@@ -68,11 +68,11 @@ export default function HomePage() {
           </p>
           <ul className="mt-5 space-y-2.5 text-xs text-slate-600 font-medium">
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue shrink-0" />
               Penanganan remote cepat & on-site terkoordinasi
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ssm-blue shrink-0" />
               Verifikasi bridging protokol HL7 & integritas database lab
             </li>
           </ul>
@@ -80,7 +80,7 @@ export default function HomePage() {
       </section>
 
       {/* Feature Highlights - Clean Slate Contrast */}
-      <section className="p-8 sm:p-10 rounded-2xl bg-slate-900 text-white">
+      <section className="p-6 sm:p-10 rounded-2xl bg-slate-900 text-white">
         <div className="grid sm:grid-cols-3 gap-8 text-center sm:text-left">
           <div>
             <div className="w-10 h-10 rounded-xl bg-ssm-blue/30 text-sky-200 flex items-center justify-center mb-3.5">
